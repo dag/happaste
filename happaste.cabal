@@ -1,0 +1,52 @@
+Name               : happaste
+Version            : 0.1.0
+License            : BSD3
+Cabal-Version      : >= 1.9.2
+Build-Type         : Simple
+Extra-Source-Files : assets/*.css
+
+Executable happaste
+  Main-Is       : happaste.hs
+  GHC-Options   :
+    -Wall
+    -fno-warn-orphans
+    -threaded -rtsopts -with-rtsopts=-N
+    -F -pgmF trhsx
+  Extensions    :
+    DeriveDataTypeable
+    FlexibleInstances
+    GeneralizedNewtypeDeriving
+    MultiParamTypeClasses
+    QuasiQuotes
+    RecordWildCards
+    TemplateHaskell
+    TypeFamilies
+    TypeSynonymInstances
+  Build-Depends :
+    acid-state,
+    base == 4.*,
+    boomerang,
+    bytestring,
+    containers,
+    data-default,
+    data-lens-fd,
+    data-lens-template,
+    digestive-functors,
+    digestive-functors-happstack,
+    digestive-functors-hsp,
+    file-embed,
+    happstack-hsp >= 6.1.0,
+    happstack-jmacro,
+    happstack-server,
+    hsx-jmacro,
+    ixset,
+    jmacro,
+    mtl,
+    safecopy,
+    shakespeare-css,
+    template-haskell == 2.5.*,
+    text,
+    web-routes,
+    web-routes-boomerang,
+    web-routes-happstack,
+    web-routes-hsp
