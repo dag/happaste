@@ -45,7 +45,7 @@ Executable happaste
     safecopy,
     shakespeare-css,
     template-haskell == 2.5.*,
-    text,
+    text >= 0.11.1.1,
     web-routes,
     web-routes-boomerang,
     web-routes-happstack,
