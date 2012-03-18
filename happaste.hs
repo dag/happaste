@@ -178,14 +178,14 @@ route (NewPaste) = do
         k <- update $ SavePaste paste
         seeOtherURL $ ShowPaste k
 
-route (ShowPaste k) = do
+route (ShowPaste k) =
     queryMaybe (GetPaste k) $ \paste -> do
       let text        = paste ^. content
           highlighted =
             case lexerFromFilename . T.unpack $ paste ^. fileName of
               Nothing    -> text
               Just lexer ->
-                case runLexer lexer $ encodeUtf8 $ text of
+                case runLexer lexer $ encodeUtf8 text of
                   Left _       -> text
                   Right tokens ->
                     L.toStrict . renderHtml $ format False tokens
