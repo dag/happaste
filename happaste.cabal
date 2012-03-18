@@ -9,7 +9,9 @@ Executable happaste
   Main-Is       : happaste.hs
   GHC-Options   :
     -Wall
+    -fno-warn-missing-signatures
     -fno-warn-orphans
+    -fno-warn-unused-do-bind
     -threaded -rtsopts -with-rtsopts=-N
     -F -pgmF trhsx
   Extensions    :

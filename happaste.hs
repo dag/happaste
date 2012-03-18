@@ -9,7 +9,7 @@ import qualified Data.Text.Lazy as L
 import Control.Applicative              ((<$>), (<*>))
 import Control.Category                 (Category(id, (.)))
 import Control.Exception                (bracket)
-import Control.Monad                    (forM, mzero, msum)
+import Control.Monad                    (forM, mzero)
 import Control.Monad.Reader             (ask, asks, ReaderT, runReaderT)
 import Control.Monad.Trans              (lift, liftIO)
 import Data.Acid                        (AcidState, Query, Update, makeAcidic, openLocalState)
@@ -17,12 +17,11 @@ import Data.Acid.Advanced               (query', update')
 import Data.Acid.Local                  (createCheckpointAndClose)
 import Data.ByteString                  (ByteString)
 import Data.Default                     (Default(def))
-import Data.FileEmbed
+import Data.FileEmbed                   (embedDir)
 import Data.IxSet                       (IxSet, Indexable(empty), ixSet, ixFun, insert, getOne, (@=), toDescList, Proxy(Proxy))
 import Data.Lens                        ((^.), (+=), (%=), getL)
 import Data.Lens.Template               (makeLens)
 import Data.Map                         (Map, (!))
-import Data.Maybe                       (maybe)
 import Data.SafeCopy                    (base, deriveSafeCopy)
 import Data.Text                        (Text, pack)
 import Data.Text.Encoding               (encodeUtf8)
@@ -31,9 +30,8 @@ import Data.Unique                      (hashUnique, newUnique)
 import HSP.ServerPartT                  ()
 import HSX.JMacro                       (IntegerSupply(nextInteger))
 import Happstack.Server                 (ServerPartT, mapServerPartT, Response, toResponse, ok, setHeaderM, simpleHTTP, nullConf, decodeBody, defaultBodyPolicy)
-import Happstack.Server.FileServe       (serveFile, guessContentTypeM, mimeTypes)
+import Happstack.Server.FileServe       (guessContentTypeM, mimeTypes)
 import Happstack.Server.HSP.HTML        (EmbedAsChild(asChild), cdata, genElement, asAttr, Attr((:=)), unXMLGenT, genEElement)
-import Happstack.Server.HSX
 import Happstack.Server.JMacro          ()
 import Language.Javascript.JMacro
 import Text.Blaze.Renderer.Text         (renderHtml)
@@ -44,8 +42,8 @@ import Text.Digestive.HSP.Html4         (label, inputText, inputTextArea, form)
 import Text.Highlighter                 (lexerFromFilename, runLexer)
 import Text.Highlighter.Formatters.Html (format)
 import Text.Lucius                      (Css, renderCss, lucius)
-import Web.Routes
-import Web.Routes.Boomerang
+import Web.Routes                       (Site, RouteT, askRouteT)
+import Web.Routes.Boomerang             (Router, boomerangSiteRouteT, lit, anyString, integer, (</>), (<>))
 import Web.Routes.Happstack             (implSite, seeOtherURL)
 import Web.Routes.XMLGenT               ()
 
@@ -168,7 +166,7 @@ route (ShowPaste k) = do
               Nothing    -> text
               Just lexer ->
                 case runLexer lexer $ encodeUtf8 $ text of
-                  Left errors  -> text
+                  Left _       -> text
                   Right tokens ->
                     L.toStrict . renderHtml $ format False tokens
       appTemplate
@@ -187,11 +185,11 @@ route (ShowPaste k) = do
 type Lucius url = (url -> [(Text,Maybe Text)] -> Text) -> Css
 
 instance (Functor m, Monad m) => EmbedAsChild (RouteT url m) (Lucius url) where
-  asChild css = do
+  asChild style = do
     url <- lift askRouteT
     asChild
       <style type="text/css">
-        <% renderCss $ css url %>
+        <% renderCss $ style url %>
       </style>
 
 instance IntegerSupply (ServerPartT IO) where
