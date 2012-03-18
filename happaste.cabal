@@ -9,13 +9,14 @@ Executable happaste
   Main-Is       : happaste.hs
   GHC-Options   :
     -Wall
-    -fno-warn-missing-signatures
     -fno-warn-orphans
     -fno-warn-unused-do-bind
+    -fno-warn-unused-imports
     -threaded -rtsopts -with-rtsopts=-N
     -F -pgmF trhsx
   Extensions    :
     DeriveDataTypeable
+    FlexibleContexts
     FlexibleInstances
     GeneralizedNewtypeDeriving
     MultiParamTypeClasses
@@ -42,6 +43,7 @@ Executable happaste
     happstack-jmacro,
     happstack-server,
     highlighter,
+    hsx,
     hsx-jmacro,
     ixset,
     jmacro,

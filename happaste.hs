@@ -2,18 +2,19 @@ module Main where
 
 import Prelude hiding (id, (.))
 
-import qualified Data.Map       as Map
-import qualified Data.Text      as T
-import qualified Data.Text.Lazy as L
+import qualified Data.Map         as Map
+import qualified Data.Text        as T
+import qualified Data.Text.Lazy   as L
+import qualified HSX.XMLGenerator as HSX
 
 import Control.Applicative              ((<$>), (<*>))
 import Control.Category                 (Category(id, (.)))
 import Control.Exception                (bracket)
-import Control.Monad                    (forM, mzero)
-import Control.Monad.Reader             (ask, asks, ReaderT, runReaderT)
-import Control.Monad.Trans              (lift, liftIO)
-import Data.Acid                        (AcidState, Query, Update, makeAcidic, openLocalState)
-import Data.Acid.Advanced               (query', update')
+import Control.Monad                    (MonadPlus, forM, mzero)
+import Control.Monad.Reader             (MonadReader, ask, asks, ReaderT, runReaderT)
+import Control.Monad.Trans              (MonadIO, lift, liftIO)
+import Data.Acid                        (AcidState, QueryEvent, UpdateEvent, Query, Update, EventResult, makeAcidic, openLocalState)
+import Data.Acid.Advanced               (MethodState, MethodResult, query', update')
 import Data.Acid.Local                  (createCheckpointAndClose)
 import Data.ByteString                  (ByteString)
 import Data.Default                     (Default(def))
@@ -29,14 +30,14 @@ import Data.Typeable                    (Typeable)
 import Data.Unique                      (hashUnique, newUnique)
 import HSP.ServerPartT                  ()
 import HSX.JMacro                       (IntegerSupply(nextInteger))
-import Happstack.Server                 (ServerPartT, mapServerPartT, Response, toResponse, ok, setHeaderM, simpleHTTP, nullConf, decodeBody, defaultBodyPolicy)
+import Happstack.Server                 (ServerPartT, mapServerPartT, Response, ToMessage, toResponse, ok, setHeaderM, Input, simpleHTTP, nullConf, decodeBody, defaultBodyPolicy)
 import Happstack.Server.FileServe       (guessContentTypeM, mimeTypes)
-import Happstack.Server.HSP.HTML        (EmbedAsChild(asChild), cdata, genElement, asAttr, Attr((:=)), unXMLGenT, genEElement)
+import Happstack.Server.HSP.HTML        (EmbedAsChild(asChild), EmbedAsAttr, cdata, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, XMLGenerator, genEElement)
 import Happstack.Server.JMacro          ()
 import Language.Javascript.JMacro
 import Text.Blaze.Renderer.Text         (renderHtml)
 import Text.Boomerang.TH                (derivePrinterParsers)
-import Text.Digestive                   ((++>))
+import Text.Digestive                   ((++>), Form)
 import Text.Digestive.Forms.Happstack   (eitherHappstackForm)
 import Text.Digestive.HSP.Html4         (label, inputText, inputTextArea, form)
 import Text.Highlighter                 (lexerFromFilename, runLexer)
@@ -102,14 +103,31 @@ getPaste k = do
 
 makeAcidic ''AppState ['recentPastes, 'savePaste, 'getPaste]
 
+query :: ( QueryEvent e
+         , MonadIO m
+         , MonadReader (AcidState (MethodState e)) m
+         )
+      => e -> m (EventResult e)
 query ev = do
     st <- ask
     query' st ev
 
+update :: ( UpdateEvent e
+          , MonadIO m
+          , MonadReader (AcidState (MethodState e)) m
+          )
+       => e -> m (EventResult e)
 update ev = do
     st <- ask
     update' st ev
 
+queryMaybe :: ( MethodResult e ~ Maybe a
+              , QueryEvent e
+              , MonadIO m
+              , MonadReader (AcidState (MethodState e)) m
+              , MonadPlus m
+              )
+           => e -> (a -> m b) -> m b
 queryMaybe ev f = do
     m <- query ev
     maybe mzero f m
@@ -122,6 +140,8 @@ queryMaybe ev f = do
 data Sitemap = Asset FilePath | NewPaste | ShowPaste Key
 derivePrinterParsers ''Sitemap
 
+type Server = RouteT Sitemap (ServerPartT (ReaderT State IO))
+
 sitemap :: Router Sitemap
 sitemap = (rAsset . (lit "assets" </> anyString))
        <> (rNewPaste)
@@ -130,7 +150,7 @@ sitemap = (rAsset . (lit "assets" </> anyString))
 site :: Site Sitemap (ServerPartT (ReaderT State IO) Response)
 site = boomerangSiteRouteT route sitemap
 
-route :: Sitemap -> RouteT Sitemap (ServerPartT (ReaderT State IO)) Response
+route :: Sitemap -> Server Response
 
 route (Asset f) = do
     mime <- guessContentTypeM mimeTypes f
@@ -193,13 +213,20 @@ instance (Functor m, Monad m) => EmbedAsChild (RouteT url m) (Lucius url) where
 instance IntegerSupply (ServerPartT IO) where
   nextInteger = fromIntegral . (`mod` 1024) . hashUnique <$> liftIO newUnique
 
+appTemplate :: ( EmbedAsChild f (Lucius Sitemap)
+               , EmbedAsChild f c
+               , XMLGenerator f
+               , ToMessage (HSX.XML f)
+               , EmbedAsAttr f (Attr String Sitemap)
+               , Functor f
+               )
+            => c -> f Response
 appTemplate body = fmap toResponse $ unXMLGenT
     <html>
       <head>
-        <link rel="stylesheet" type="text/css" href=(Asset "yui.css")/>
-        <link rel="stylesheet" type="text/css" href=(Asset "highlighter.css")/>
-        <link rel="stylesheet" type="text/css"
-          href="http://fonts.googleapis.com/css?family=Gloria+Hallelujah&text=Happaste"/>
+        <% stylesheet $ Asset "yui.css" %>
+        <% stylesheet $ Asset "highlighter.css" %>
+        <% stylesheet "http://fonts.googleapis.com/css?family=Gloria+Hallelujah&text=Happaste" %>
         <% css %>
       </head>
       <body>
@@ -211,7 +238,13 @@ appTemplate body = fmap toResponse $ unXMLGenT
         </div>
       </body>
     </html>
+  where
+    stylesheet :: (XMLGenerator x, EmbedAsAttr x (Attr String url))
+               => url -> XMLGenT x (HSX.XML x)
+    stylesheet url =
+      <link rel="stylesheet" type="text/css" href=url/>
 
+recentPastesList :: XMLGenT Server [HSX.Child Server]
 recentPastesList = do
     ps <- query RecentPastes
     asChild
@@ -273,6 +306,7 @@ assets = Map.fromList $(embedDir "assets")
  -                                  Forms                                  -
  ---------------------------------------------------------------------------}
 
+pasteForm :: Form Server [Input] e [XMLGenT Server (HSX.XML Server)] Paste
 pasteForm = Paste
     <$>           label "File name:"
               ++> inputText Nothing
