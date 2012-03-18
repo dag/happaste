@@ -2,47 +2,52 @@ module Main where
 
 import Prelude hiding (id, (.))
 
-import qualified Data.Text as T
-import qualified Data.Map as Map
+import qualified Data.Map       as Map
+import qualified Data.Text      as T
+import qualified Data.Text.Lazy as L
 
-import Control.Applicative            ((<$>), (<*>))
-import Control.Category               (Category(id, (.)))
-import Control.Exception              (bracket)
-import Control.Monad                  (forM, mzero, msum)
-import Control.Monad.Reader           (ask, asks, ReaderT, runReaderT)
-import Control.Monad.Trans            (lift, liftIO)
-import Data.Acid                      (AcidState, Query, Update, makeAcidic, openLocalState)
-import Data.Acid.Advanced             (query', update')
-import Data.Acid.Local                (createCheckpointAndClose)
-import Data.ByteString                (ByteString)
-import Data.Default                   (Default(def))
+import Control.Applicative              ((<$>), (<*>))
+import Control.Category                 (Category(id, (.)))
+import Control.Exception                (bracket)
+import Control.Monad                    (forM, mzero, msum)
+import Control.Monad.Reader             (ask, asks, ReaderT, runReaderT)
+import Control.Monad.Trans              (lift, liftIO)
+import Data.Acid                        (AcidState, Query, Update, makeAcidic, openLocalState)
+import Data.Acid.Advanced               (query', update')
+import Data.Acid.Local                  (createCheckpointAndClose)
+import Data.ByteString                  (ByteString)
+import Data.Default                     (Default(def))
 import Data.FileEmbed
-import Data.IxSet                     (IxSet, Indexable(empty), ixSet, ixFun, insert, getOne, (@=), toDescList, Proxy(Proxy))
-import Data.Lens                      ((^.), (+=), (%=), getL)
-import Data.Lens.Template             (makeLens)
-import Data.Map                       (Map, (!))
-import Data.Maybe                     (maybe)
-import Data.SafeCopy                  (base, deriveSafeCopy)
-import Data.Text                      (Text, pack)
-import Data.Typeable                  (Typeable)
-import Data.Unique                    (hashUnique, newUnique)
-import HSP.ServerPartT                ()
-import HSX.JMacro                     (IntegerSupply(nextInteger))
-import Happstack.Server               (ServerPartT, mapServerPartT, Response, toResponse, ok, setHeaderM, simpleHTTP, nullConf, decodeBody, defaultBodyPolicy)
-import Happstack.Server.FileServe     (serveFile, guessContentTypeM, mimeTypes)
-import Happstack.Server.HSP.HTML      (EmbedAsChild(asChild), genElement, asAttr, Attr((:=)), unXMLGenT, genEElement)
+import Data.IxSet                       (IxSet, Indexable(empty), ixSet, ixFun, insert, getOne, (@=), toDescList, Proxy(Proxy))
+import Data.Lens                        ((^.), (+=), (%=), getL)
+import Data.Lens.Template               (makeLens)
+import Data.Map                         (Map, (!))
+import Data.Maybe                       (maybe)
+import Data.SafeCopy                    (base, deriveSafeCopy)
+import Data.Text                        (Text, pack)
+import Data.Text.Encoding               (encodeUtf8)
+import Data.Typeable                    (Typeable)
+import Data.Unique                      (hashUnique, newUnique)
+import HSP.ServerPartT                  ()
+import HSX.JMacro                       (IntegerSupply(nextInteger))
+import Happstack.Server                 (ServerPartT, mapServerPartT, Response, toResponse, ok, setHeaderM, simpleHTTP, nullConf, decodeBody, defaultBodyPolicy)
+import Happstack.Server.FileServe       (serveFile, guessContentTypeM, mimeTypes)
+import Happstack.Server.HSP.HTML        (EmbedAsChild(asChild), cdata, genElement, asAttr, Attr((:=)), unXMLGenT, genEElement)
 import Happstack.Server.HSX
-import Happstack.Server.JMacro        ()
+import Happstack.Server.JMacro          ()
 import Language.Javascript.JMacro
-import Text.Boomerang.TH              (derivePrinterParsers)
-import Text.Digestive                 ((++>))
-import Text.Digestive.Forms.Happstack (eitherHappstackForm)
-import Text.Digestive.HSP.Html4       (label, inputText, inputTextArea, form)
-import Text.Lucius                    (Css, renderCss, lucius)
+import Text.Blaze.Renderer.Text         (renderHtml)
+import Text.Boomerang.TH                (derivePrinterParsers)
+import Text.Digestive                   ((++>))
+import Text.Digestive.Forms.Happstack   (eitherHappstackForm)
+import Text.Digestive.HSP.Html4         (label, inputText, inputTextArea, form)
+import Text.Highlighter                 (lexerFromFilename, runLexer)
+import Text.Highlighter.Formatters.Html (format)
+import Text.Lucius                      (Css, renderCss, lucius)
 import Web.Routes
 import Web.Routes.Boomerang
-import Web.Routes.Happstack           (implSite, seeOtherURL)
-import Web.Routes.XMLGenT             ()
+import Web.Routes.Happstack             (implSite, seeOtherURL)
+import Web.Routes.XMLGenT               ()
 
 
 {---------------------------------------------------------------------------
@@ -156,13 +161,23 @@ route (NewPaste) = do
         seeOtherURL $ ShowPaste k
 
 route (ShowPaste k) = do
-    queryMaybe (GetPaste k) $ \paste -> appTemplate
-      <%>
-        <div class="yui3-u-1">
-          <h2><% paste ^. fileName %></h2>
-          <pre><% paste ^. content %></pre>
-        </div>
-      </%>
+    queryMaybe (GetPaste k) $ \paste -> do
+      let text        = paste ^. content
+          highlighted =
+            case lexerFromFilename . T.unpack $ paste ^. fileName of
+              Nothing    -> text
+              Just lexer ->
+                case runLexer lexer $ encodeUtf8 $ text of
+                  Left errors  -> text
+                  Right tokens ->
+                    L.toStrict . renderHtml $ format False tokens
+      appTemplate
+        <%>
+          <div class="yui3-u-1">
+            <h2><% paste ^. fileName %></h2>
+            <pre><% cdata . T.unpack $ highlighted %></pre>
+          </div>
+        </%>
 
 
 {---------------------------------------------------------------------------
@@ -186,6 +201,7 @@ appTemplate body = fmap toResponse $ unXMLGenT
     <html>
       <head>
         <link rel="stylesheet" type="text/css" href=(Asset "yui.css")/>
+        <link rel="stylesheet" type="text/css" href=(Asset "highlighter.css")/>
         <link rel="stylesheet" type="text/css"
           href="http://fonts.googleapis.com/css?family=Gloria+Hallelujah&text=Happaste"/>
         <% css %>
@@ -274,7 +290,7 @@ pasteForm = Paste
 
 server :: State -> IO ()
 server st = simpleHTTP nullConf $ do
-    decodeBody $ defaultBodyPolicy "/tmp/" 0 4096 4096
+    decodeBody $ defaultBodyPolicy "/tmp/" 0 40960 40960
     implSite (pack "http://localhost:8000") T.empty $
       fmap (mapServerPartT (`runReaderT` st)) site
 

@@ -25,6 +25,7 @@ Executable happaste
   Build-Depends :
     acid-state,
     base == 4.*,
+    blaze-html,
     boomerang,
     bytestring,
     containers,
@@ -38,6 +39,7 @@ Executable happaste
     happstack-hsp >= 6.1.0,
     happstack-jmacro,
     happstack-server,
+    highlighter,
     hsx-jmacro,
     ixset,
     jmacro,
