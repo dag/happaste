@@ -170,12 +170,10 @@ route (ShowPaste k) = do
                   Right tokens ->
                     L.toStrict . renderHtml $ format False tokens
       appTemplate
-        <%>
-          <div class="yui3-u-1">
-            <h2><% paste ^. fileName %></h2>
-            <pre><% cdata . T.unpack $ highlighted %></pre>
-          </div>
-        </%>
+        <div class="yui3-u-1">
+          <h2><% paste ^. fileName %></h2>
+          <pre><% cdata . T.unpack $ highlighted %></pre>
+        </div>
 
 
 {---------------------------------------------------------------------------
