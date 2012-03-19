@@ -37,7 +37,7 @@ import Happstack.Server.JMacro          ()
 import Language.Javascript.JMacro
 import Text.Blaze.Renderer.Text         (renderHtml)
 import Text.Boomerang.TH                (derivePrinterParsers)
-import Text.Digestive                   ((++>), Form)
+import Text.Digestive                   ((++>), Form, mapView)
 import Text.Digestive.Forms.Happstack   (eitherHappstackForm)
 import Text.Digestive.HSP.Html4         (label, inputText, inputTextArea, form)
 import Text.Highlighter                 (lexerFromFilename, runLexer)
@@ -277,10 +277,7 @@ css = [$lucius|
     { margin    : 1em auto
     ; max-width : #{width}
     ; font-size : 123.1%
-    ; label, textarea
-        { display : block
-        }
-      textarea
+    ; textarea
         { font-family : monospace
         ; width       : 100%
         ; height      : 2400%
@@ -307,11 +304,17 @@ assets = Map.fromList $(embedDir "assets")
  ---------------------------------------------------------------------------}
 
 pasteForm :: Form Server [Input] e [XMLGenT Server (HSX.XML Server)] Paste
-pasteForm = Paste
-    <$>           label "File name:"
-              ++> inputText Nothing
-    <*> (pack <$> label "Paste:"
-              ++> inputTextArea (Just 80) (Just 24) Nothing)
+pasteForm = mapView dl $ Paste
+    <$>   dt `mapView` label "File name:"
+      ++> dd `mapView` inputText Nothing
+    <*> ( pack <$>
+          dt `mapView` label "Paste:"
+      ++> dd `mapView` inputTextArea (Just 80) (Just 24) Nothing
+        )
+  where
+    dl x = [<dl><% x %></dl>]
+    dt x = [<dt><% x %></dt>]
+    dd x = [<dd><% x %></dd>]
 
 
 {---------------------------------------------------------------------------
