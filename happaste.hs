@@ -21,7 +21,7 @@ import Data.ByteString                  (ByteString)
 import Data.Default                     (Default(def))
 import Data.FileEmbed                   (embedDir)
 import Data.IxSet                       (IxSet, Indexable(empty), ixSet, ixFun, insert, getOne, (@=), toDescList, Proxy(Proxy))
-import Data.Lens                        ((^.), (+=), (%=), getL)
+import Data.Lens                        ((^.), (%=), getL)
 import Data.Lens.Template               (makeLens)
 import Data.Map                         (Map, (!))
 import Data.SafeCopy                    (base, deriveSafeCopy)
@@ -92,7 +92,7 @@ recentPastes = do
 
 savePaste :: Paste -> Update AppState Key
 savePaste p = do
-    k <- nextKey += 1
+    k <- nextKey %= succ
     pastes %= insert (k,p)
     return k
 
