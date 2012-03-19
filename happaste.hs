@@ -164,17 +164,13 @@ route (NewPaste) = do
     case r of
       Left f -> appTemplate
         <%>
-          <div class="yui3-u-17-24">
-            <% form NewPaste
-              <%>
-                <% f %>
-                <input type="submit" value="Create"/>
-              </%>
-            %>
-          </div>
-          <div class="yui3-u-7-24">
-            <% recentPastesList %>
-          </div>
+          <% unit "17-24" $ form NewPaste
+            <%>
+              <% f %>
+              <input type="submit" value="Create"/>
+            </%>
+          %>
+          <% unit "7-24" recentPastesList %>
         </%>
       Right paste -> do
         k <- update $ SavePaste paste
@@ -192,10 +188,12 @@ route (ShowPaste k) =
                   Right tokens ->
                     L.toStrict . renderHtml $ format False tokens
       appTemplate
-        <div class="yui3-u-1">
-          <h2><% paste ^. fileName %></h2>
-          <pre><% cdata . T.unpack $ highlighted %></pre>
-        </div>
+        <% unit "1"
+          <%>
+            <h2><% paste ^. fileName %></h2>
+            <pre><% cdata . T.unpack $ highlighted %></pre>
+          </%>
+        %>
 
 
 {---------------------------------------------------------------------------
@@ -234,10 +232,20 @@ appTemplate body = fmap toResponse $ unXMLGenT
       </head>
       <body>
         <div id="header">
-          <h1><a href=NewPaste>Happaste</a></h1>
+          <div class="grid">
+            <div class="yui3-g">
+              <% unit "1"
+                <h1><a href=NewPaste>Happaste</a></h1>
+              %>
+            </div>
+          </div>
         </div>
-        <div id="content" class="yui3-g">
-          <% body %>
+        <div id="content">
+          <div class="grid">
+            <div class="yui3-g">
+              <% body %>
+            </div>
+          </div>
         </div>
       </body>
     </html>
@@ -246,6 +254,18 @@ appTemplate body = fmap toResponse $ unXMLGenT
                => url -> XMLGenT x (HSX.XML x)
     stylesheet url =
       <link rel="stylesheet" type="text/css" href=url/>
+
+unit :: ( EmbedAsChild m c
+        , EmbedAsChild m (HSX.XML m)
+        , EmbedAsAttr m (Attr String String)
+        )
+     => String -> c -> XMLGenT m (HSX.XML m)
+unit size body =
+    <div class=("yui3-u-" ++ size)>
+      <div class="unit">
+        <% body %>
+      </div>
+    </div>
 
 recentPastesList :: XMLGenT Server [HSX.Child Server]
 recentPastesList = do
@@ -259,43 +279,53 @@ recentPastesList = do
 
 css :: Lucius Sitemap
 css = [$lucius|
-  @width  : 960px;
+  @width  : 978px;
+  @gutter : 30px;
   @color1 : #3B4162;
+
+  div.yui3-g div.unit
+    { margin-left: #{gutter}
+    }
+
+  div.grid
+    { max-width     : #{width}
+    ; margin        : 0 auto
+    ; padding-right : #{gutter}
+    }
 
   div#header
     { background : #{color1}
     ; h1
         { font-family : "Gloria Hallelujah", serif
         ; font-size   : 197%
-        ; margin      : 0 auto
         ; padding     : .5em 0
-        ; max-width   : #{width}
+        ; margin      : 0
         ; a
-            { color           : #fff
-            ; text-decoration : none
+            { color : #fff
             }
         }
     }
 
   div#content
-    { margin    : 1em auto
-    ; max-width : #{width}
-    ; font-size : 123.1%
+    { font-size : 123.1%
     ; textarea
         { font-family : monospace
         ; width       : 100%
         ; height      : 2400%
         }
       a
-        { color           : #{color1}
-        ; text-decoration : none
+        { color : #{color1}
         }
-      ol.recent-pastes
-        { list-style-type : none
-        ; margin-left     : 40px
-        ; padding-left    : 20px
-        ; border-left     : 3px solid #{color1}
-        }
+    }
+
+  a
+    { text-decoration : none
+    }
+
+  ol.recent-pastes
+    { list-style-type : none
+    ; padding-left    : 20px
+    ; border-left     : 3px solid #{color1}
     }
 |]
 
