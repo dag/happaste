@@ -20,8 +20,8 @@ import Data.Acid.Local                  (createCheckpointAndClose)
 import Data.ByteString                  (ByteString)
 import Data.Default                     (Default(def))
 import Data.FileEmbed                   (embedDir)
-import Data.IxSet                       (IxSet, Indexable(empty), ixSet, ixFun, insert, getOne, (@=), toDescList, Proxy(Proxy))
-import Data.Lens                        ((^.), (%=), getL)
+import Data.IxSet                       (IxSet, Indexable(empty), ixSet, ixFun, insert, getOne, getEQ, toDescList, Proxy(Proxy))
+import Data.Lens                        (Lens, (^.), (%=), getL)
 import Data.Lens.Template               (makeLens)
 import Data.Map                         (Map, (!))
 import Data.SafeCopy                    (base, deriveSafeCopy)
@@ -85,10 +85,14 @@ instance Default AppState where
 
 type State = AcidState AppState
 
+infixr 4 %.
+(%.) :: MonadReader r m => Lens r t -> (t -> b) -> m b
+l %. f = do
+    r <- asks $ getL l
+    return $ f r
+
 recentPastes :: Query AppState [(Key,Paste)]
-recentPastes = do
-    ps <- asks $ getL pastes
-    return $ take 10 $ toDescList (Proxy :: Proxy Key) ps
+recentPastes = pastes %. take 10 . toDescList (Proxy :: Proxy Key)
 
 savePaste :: Paste -> Update AppState Key
 savePaste p = do
@@ -97,9 +101,7 @@ savePaste p = do
     return k
 
 getPaste :: Key -> Query AppState (Maybe Paste)
-getPaste k = do
-    ps <- asks $ getL pastes
-    return $ snd <$> (getOne $ ps @= k)
+getPaste k = pastes %. fmap snd . getOne . getEQ k
 
 makeAcidic ''AppState ['recentPastes, 'savePaste, 'getPaste]
 
