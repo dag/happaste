@@ -172,7 +172,7 @@ route (NewPaste) = do
               </%>
             %>
           </div>
-          <div class="yui3-u-7-24 recent-pastes">
+          <div class="yui3-u-7-24">
             <% recentPastesList %>
           </div>
         </%>
@@ -251,7 +251,7 @@ recentPastesList :: XMLGenT Server [HSX.Child Server]
 recentPastesList = do
     ps <- query RecentPastes
     asChild
-      <ol>
+      <ol class="recent-pastes">
         <% forM ps $ \(k,p) ->
           <li><a href=(ShowPaste k)><% p ^. fileName %></a></li>
         %>
@@ -289,7 +289,7 @@ css = [$lucius|
         { color           : #3B4162
         ; text-decoration : none
         }
-      .recent-pastes ol
+      ol.recent-pastes
         { list-style-type : none
         ; margin-left     : 40px
         ; padding-left    : 20px
