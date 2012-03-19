@@ -259,10 +259,11 @@ recentPastesList = do
 
 css :: Lucius Sitemap
 css = [$lucius|
-  @width: 960px;
+  @width  : 960px;
+  @color1 : #3B4162;
 
   div#header
-    { background : #3B4162
+    { background : #{color1}
     ; h1
         { font-family : "Gloria Hallelujah", serif
         ; font-size   : 197%
@@ -286,14 +287,14 @@ css = [$lucius|
         ; height      : 2400%
         }
       a
-        { color           : #3B4162
+        { color           : #{color1}
         ; text-decoration : none
         }
       ol.recent-pastes
         { list-style-type : none
         ; margin-left     : 40px
         ; padding-left    : 20px
-        ; border-left     : 3px solid #3B4162
+        ; border-left     : 3px solid #{color1}
         }
     }
 |]
