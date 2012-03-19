@@ -12,7 +12,8 @@ import Control.Category                 (Category(id, (.)))
 import Control.Exception                (bracket)
 import Control.Monad                    (MonadPlus, forM, mzero)
 import Control.Monad.Reader             (MonadReader, ask, asks, ReaderT, runReaderT)
-import Control.Monad.Trans              (MonadIO, lift, liftIO)
+import Control.Monad.State              (StateT, evalStateT)
+import Control.Monad.Trans              (MonadIO, lift)
 import Data.Acid                        (AcidState, QueryEvent, UpdateEvent, Query, Update, EventResult, makeAcidic, openLocalState)
 import Data.Acid.Advanced               (MethodState, MethodResult, query', update')
 import Data.Acid.Local                  (createCheckpointAndClose)
@@ -27,9 +28,8 @@ import Data.SafeCopy                    (base, deriveSafeCopy)
 import Data.Text                        (Text, pack)
 import Data.Text.Encoding               (encodeUtf8)
 import Data.Typeable                    (Typeable)
-import Data.Unique                      (hashUnique, newUnique)
 import HSP.ServerPartT                  ()
-import HSX.JMacro                       (IntegerSupply(nextInteger))
+import HSX.JMacro                       (IntegerSupply(nextInteger), nextInteger')
 import Happstack.Server                 (ServerPartT, mapServerPartT, Response, ToMessage, toResponse, ok, setHeaderM, Input, simpleHTTP, nullConf, decodeBody, defaultBodyPolicy)
 import Happstack.Server.FileServe       (guessContentTypeM, mimeTypes)
 import Happstack.Server.HSP.HTML        (EmbedAsChild(asChild), EmbedAsAttr, cdata, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, XMLGenerator, genEElement)
@@ -140,14 +140,14 @@ queryMaybe ev f = do
 data Sitemap = Asset FilePath | NewPaste | ShowPaste Key
 derivePrinterParsers ''Sitemap
 
-type Server = RouteT Sitemap (ServerPartT (ReaderT State IO))
+type Server = RouteT Sitemap (ServerPartT (ReaderT State (StateT Integer IO)))
 
 sitemap :: Router Sitemap
 sitemap = (rAsset . (lit "assets" </> anyString))
        <> (rNewPaste)
        <> (rShowPaste . integer)
 
-site :: Site Sitemap (ServerPartT (ReaderT State IO) Response)
+site :: Site Sitemap (ServerPartT (ReaderT State (StateT Integer IO)) Response)
 site = boomerangSiteRouteT route sitemap
 
 route :: Sitemap -> Server Response
@@ -210,14 +210,15 @@ instance (Functor m, Monad m) => EmbedAsChild (RouteT url m) (Lucius url) where
         <% renderCss $ style url %>
       </style>
 
-instance IntegerSupply (ServerPartT IO) where
-  nextInteger = fromIntegral . (`mod` 1024) . hashUnique <$> liftIO newUnique
+instance IntegerSupply Server where
+  nextInteger = nextInteger'
 
 appTemplate :: ( EmbedAsChild f (Lucius Sitemap)
                , EmbedAsChild f c
                , XMLGenerator f
                , ToMessage (HSX.XML f)
                , EmbedAsAttr f (Attr String Sitemap)
+               , IntegerSupply f
                , Functor f
                )
             => c -> f Response
@@ -325,7 +326,7 @@ server :: State -> IO ()
 server st = simpleHTTP nullConf $ do
     decodeBody $ defaultBodyPolicy "/tmp/" 0 40960 40960
     implSite (pack "http://localhost:8000") T.empty $
-      fmap (mapServerPartT (`runReaderT` st)) site
+      fmap (mapServerPartT ((`evalStateT` 0) . (`runReaderT` st))) site
 
 main :: IO ()
 main = bracket (openLocalState def) createCheckpointAndClose server
