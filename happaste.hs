@@ -10,7 +10,7 @@ import qualified HSX.XMLGenerator as HSX
 import Control.Applicative              ((<$>), (<*>))
 import Control.Category                 (Category(id, (.)))
 import Control.Exception                (bracket)
-import Control.Monad                    (MonadPlus, forM, mzero)
+import Control.Monad                    (MonadPlus, forM, mzero, liftM)
 import Control.Monad.Reader             (MonadReader, ask, asks, ReaderT, runReaderT)
 import Control.Monad.State              (StateT, evalStateT)
 import Control.Monad.Trans              (MonadIO, lift)
@@ -85,11 +85,12 @@ instance Default AppState where
 
 type State = AcidState AppState
 
+askL :: MonadReader r m => Lens r t -> m t
+askL = asks . getL
+
 infixr 4 %.
 (%.) :: MonadReader r m => Lens r t -> (t -> b) -> m b
-l %. f = do
-    r <- asks $ getL l
-    return $ f r
+(%.) = flip liftM . askL
 
 recentPastes :: Query AppState [(Key,Paste)]
 recentPastes = pastes %. take 10 . toDescList (Proxy :: Proxy Key)
