@@ -224,15 +224,14 @@ instance IntegerSupply Server where
   nextInteger = nextInteger'
 
 appTemplate ::
-    ( EmbedAsChild f (Lucius Sitemap)
-    , EmbedAsChild f c
-    , XMLGenerator f
-    , ToMessage (HSX.XML f)
-    , EmbedAsAttr f (Attr String Sitemap)
-    , IntegerSupply f
-    , Functor f
-    ) => c -> f Response
-appTemplate body = fmap toResponse $ unXMLGenT
+    ( EmbedAsChild m (Lucius Sitemap)
+    , EmbedAsChild m c
+    , XMLGenerator m
+    , ToMessage (HSX.XML m)
+    , EmbedAsAttr m (Attr String Sitemap)
+    , IntegerSupply m
+    ) => c -> m Response
+appTemplate body = liftM toResponse $ unXMLGenT
     <html>
       <head>
         <% stylesheet $ Asset "yui.css" %>
