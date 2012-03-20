@@ -106,28 +106,31 @@ getPaste k = pastes %. fmap snd . getOne . getEQ k
 
 makeAcidic ''AppState ['recentPastes, 'savePaste, 'getPaste]
 
+class HasAcidState m st where
+  getAcidState :: m (AcidState st)
+
 query :: ( QueryEvent e
          , MonadIO m
-         , MonadReader (AcidState (MethodState e)) m
+         , HasAcidState m (MethodState e)
          )
       => e -> m (EventResult e)
 query ev = do
-    st <- ask
+    st <- getAcidState
     query' st ev
 
 update :: ( UpdateEvent e
           , MonadIO m
-          , MonadReader (AcidState (MethodState e)) m
+          , HasAcidState m (MethodState e)
           )
        => e -> m (EventResult e)
 update ev = do
-    st <- ask
+    st <- getAcidState
     update' st ev
 
 queryMaybe :: ( MethodResult e ~ Maybe a
               , QueryEvent e
               , MonadIO m
-              , MonadReader (AcidState (MethodState e)) m
+              , HasAcidState m (MethodState e)
               , MonadPlus m
               )
            => e -> (a -> m b) -> m b
@@ -144,6 +147,12 @@ data Sitemap = Asset FilePath | NewPaste | ShowPaste Key
 derivePrinterParsers ''Sitemap
 
 type Server = RouteT Sitemap (ServerPartT (ReaderT State (StateT Integer IO)))
+
+instance HasAcidState Server AppState where
+  getAcidState = ask
+
+instance HasAcidState (XMLGenT Server) AppState where
+  getAcidState = ask
 
 sitemap :: Router Sitemap
 sitemap = (rAsset . (lit "assets" </> anyString))
