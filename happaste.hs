@@ -109,31 +109,31 @@ makeAcidic ''AppState ['recentPastes, 'savePaste, 'getPaste]
 class HasAcidState m st where
   getAcidState :: m (AcidState st)
 
-query :: ( QueryEvent e
-         , MonadIO m
-         , HasAcidState m (MethodState e)
-         )
-      => e -> m (EventResult e)
+query ::
+    ( QueryEvent e
+    , MonadIO m
+    , HasAcidState m (MethodState e)
+    ) => e -> m (EventResult e)
 query ev = do
     st <- getAcidState
     query' st ev
 
-update :: ( UpdateEvent e
-          , MonadIO m
-          , HasAcidState m (MethodState e)
-          )
-       => e -> m (EventResult e)
+update ::
+    ( UpdateEvent e
+    , MonadIO m
+    , HasAcidState m (MethodState e)
+    ) => e -> m (EventResult e)
 update ev = do
     st <- getAcidState
     update' st ev
 
-queryMaybe :: ( MethodResult e ~ Maybe a
-              , QueryEvent e
-              , MonadIO m
-              , HasAcidState m (MethodState e)
-              , MonadPlus m
-              )
-           => e -> (a -> m b) -> m b
+queryMaybe ::
+    ( MethodResult e ~ Maybe a
+    , QueryEvent e
+    , MonadIO m
+    , HasAcidState m (MethodState e)
+    , MonadPlus m
+    ) => e -> (a -> m b) -> m b
 queryMaybe ev f = do
     m <- query ev
     maybe mzero f m
@@ -223,15 +223,15 @@ instance (Functor m, Monad m) => EmbedAsChild (RouteT url m) (Lucius url) where
 instance IntegerSupply Server where
   nextInteger = nextInteger'
 
-appTemplate :: ( EmbedAsChild f (Lucius Sitemap)
-               , EmbedAsChild f c
-               , XMLGenerator f
-               , ToMessage (HSX.XML f)
-               , EmbedAsAttr f (Attr String Sitemap)
-               , IntegerSupply f
-               , Functor f
-               )
-            => c -> f Response
+appTemplate ::
+    ( EmbedAsChild f (Lucius Sitemap)
+    , EmbedAsChild f c
+    , XMLGenerator f
+    , ToMessage (HSX.XML f)
+    , EmbedAsAttr f (Attr String Sitemap)
+    , IntegerSupply f
+    , Functor f
+    ) => c -> f Response
 appTemplate body = fmap toResponse $ unXMLGenT
     <html>
       <head>
@@ -265,11 +265,11 @@ appTemplate body = fmap toResponse $ unXMLGenT
     stylesheet url =
       <link rel="stylesheet" type="text/css" href=url/>
 
-unit :: ( EmbedAsChild m c
-        , EmbedAsChild m (HSX.XML m)
-        , EmbedAsAttr m (Attr String String)
-        )
-     => String -> c -> XMLGenT m (HSX.XML m)
+unit ::
+    ( EmbedAsChild m c
+    , EmbedAsChild m (HSX.XML m)
+    , EmbedAsAttr m (Attr String String)
+    ) => String -> c -> XMLGenT m (HSX.XML m)
 unit size body =
     <div class=("yui3-u-" ++ size)>
       <div class="unit">
