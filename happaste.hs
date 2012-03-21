@@ -23,7 +23,7 @@ import Data.FileEmbed                   (embedDir)
 import Data.IxSet                       (IxSet, Indexable(empty), ixSet, ixFun, insert, getOne, getEQ, toDescList, Proxy(Proxy))
 import Data.Lens                        (Lens, (^.), (%=), getL)
 import Data.Lens.Template               (makeLens)
-import Data.Map                         (Map, (!))
+import Data.Map                         (Map)
 import Data.SafeCopy                    (base, deriveSafeCopy)
 import Data.Text                        (Text, pack)
 import Data.Text.Encoding               (encodeUtf8)
@@ -193,7 +193,9 @@ route :: Sitemap -> Server Response
 route (Asset f) = do
     mime <- guessContentTypeM mimeTypes f
     setHeaderM "Content-Type" mime
-    ok $ toResponse $ assets ! f
+    case Map.lookup f assets of
+      Nothing -> mzero
+      Just bs -> ok $ toResponse bs
 
 route (NewPaste) = do
     r <- eitherHappstackForm pasteForm "paste"
