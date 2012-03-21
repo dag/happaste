@@ -217,13 +217,11 @@ route (NewPaste) = do
 route (ShowPaste k) =
     queryMaybe (GetPaste k) $ \p -> do
       highlighted <- highlight k (T.unpack $ p ^. fileName) $ p ^. content
-      appTemplate
-        <% unit "1"
-          <%>
-            <h2><% p ^. fileName %></h2>
-            <pre><% cdata . T.unpack $ highlighted %></pre>
-          </%>
-        %>
+      appTemplate $ unit "1"
+        <%>
+          <h2><% p ^. fileName %></h2>
+          <pre><% cdata . T.unpack $ highlighted %></pre>
+        </%>
 
 highlight ::
     ( HasAcidState m HighlighterState
