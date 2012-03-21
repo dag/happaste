@@ -220,7 +220,7 @@ route (ShowPaste k) =
       appTemplate $ unit "1"
         <%>
           <h2><% p ^. fileName %></h2>
-          <pre><% cdata . T.unpack $ highlighted %></pre>
+          <% cdata . T.unpack $ highlighted %>
         </%>
 
 highlight ::
@@ -271,7 +271,7 @@ appTemplate body = liftM toResponse $ unXMLGenT
       <head>
         <% stylesheet $ Asset "yui.css" %>
         <% stylesheet $ Asset "highlighter.css" %>
-        <% stylesheet "http://fonts.googleapis.com/css?family=Gloria+Hallelujah&text=Happaste" %>
+        <% stylesheet "http://fonts.googleapis.com/css?family=Stoke" %>
         <% css %>
       </head>
       <body>
@@ -325,7 +325,7 @@ css :: Lucius Sitemap
 css = [$lucius|
   @width  : 60em;
   @gutter : 1em;
-  @color1 : #3B4162;
+  @color1 : #327CCB;
 
   div.yui3-g div.unit
     { margin-left: #{gutter}
@@ -339,11 +339,8 @@ css = [$lucius|
 
   div#header
     { background : #{color1}
-    ; font-size : 123.1%
     ; h1
-        { font-family : "Gloria Hallelujah", serif
-        ; font-size   : 197%
-        ; padding     : .5em 0
+        { padding     : .5em 0
         ; margin      : 0
         ; a
             { color : #fff
@@ -352,11 +349,13 @@ css = [$lucius|
     }
 
   div#content
-    { font-size : 123.1%
-    ; textarea
+    { textarea
         { font-family : monospace
         ; width       : 100%
         ; height      : 2400%
+        }
+      input[type=submit]
+        { float : right
         }
       a
         { color : #{color1}
@@ -364,6 +363,11 @@ css = [$lucius|
       *
         { line-height : 150%
         }
+    }
+
+  h1,h2,h3,h4,h5,h6
+    { font-family : "Stoke", serif
+    ; font-weight : 400
     }
 
   a
@@ -374,6 +378,14 @@ css = [$lucius|
     { list-style-type : none
     ; padding-left    : 1em
     ; border-left     : .2em solid #{color1}
+    }
+
+  div.highlight
+    { background  : #fafafa
+    ; border-left : .3em solid #{color1}
+    ; pre
+        { padding : 1em 1em 1em 1.3em
+        }
     }
 |]
 
