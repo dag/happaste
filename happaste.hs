@@ -14,7 +14,7 @@ import Control.Monad                    (MonadPlus, forM, mzero, liftM)
 import Control.Monad.Reader             (MonadReader, ask, asks, ReaderT, runReaderT)
 import Control.Monad.State              (StateT, evalStateT)
 import Control.Monad.Trans              (MonadIO, lift)
-import Data.Acid                        (AcidState, QueryEvent, UpdateEvent, Query, Update, EventResult, makeAcidic, openLocalState)
+import Data.Acid                        (AcidState, IsAcidic, QueryEvent, UpdateEvent, Query, Update, EventResult, makeAcidic, openLocalState)
 import Data.Acid.Advanced               (MethodState, MethodResult, query', update')
 import Data.Acid.Local                  (createCheckpointAndClose)
 import Data.ByteString                  (ByteString)
@@ -73,17 +73,24 @@ instance Indexable (Key,Paste) where
 instance Indexable a => Default (IxSet a) where
   def = empty
 
-data AppState = AppState
+data PasteState = PasteState
   { _nextKey :: Key
   , _pastes  :: IxSet (Key,Paste)
   } deriving Typeable
-makeLens ''AppState
-deriveSafeCopy 0 'base ''AppState
+makeLens ''PasteState
+deriveSafeCopy 0 'base ''PasteState
 
-instance Default AppState where
-  def = AppState def def
+instance Default PasteState where
+  def = PasteState def def
 
-type State = AcidState AppState
+data HighlighterState = HighlighterState
+  { _highlights :: Map Key Text
+  } deriving Typeable
+makeLens ''HighlighterState
+deriveSafeCopy 0 'base ''HighlighterState
+
+instance Default HighlighterState where
+  def = HighlighterState def
 
 askL :: MonadReader r m => Lens r t -> m t
 askL = asks . getL
@@ -92,19 +99,35 @@ infixr 4 %.
 (%.) :: MonadReader r m => Lens r t -> (t -> b) -> m b
 (%.) = flip liftM . askL
 
-recentPastes :: Query AppState [(Key,Paste)]
-recentPastes = pastes %. take 10 . toDescList (Proxy :: Proxy Key)
+recentPasteState :: Query PasteState [(Key,Paste)]
+recentPasteState = pastes %. take 10 . toDescList (Proxy :: Proxy Key)
 
-savePaste :: Paste -> Update AppState Key
+savePaste :: Paste -> Update PasteState Key
 savePaste p = do
     k <- nextKey %= succ
     pastes %= insert (k,p)
     return k
 
-getPaste :: Key -> Query AppState (Maybe Paste)
+getPaste :: Key -> Query PasteState (Maybe Paste)
 getPaste k = pastes %. fmap snd . getOne . getEQ k
 
-makeAcidic ''AppState ['recentPastes, 'savePaste, 'getPaste]
+makeAcidic ''PasteState ['recentPasteState, 'savePaste, 'getPaste]
+
+saveHighlight :: Key -> Text -> Update HighlighterState Text
+saveHighlight k t = do
+    highlights %= Map.insert k t
+    return t
+
+getHighlight :: Key -> Query HighlighterState (Maybe Text)
+getHighlight k = highlights %. Map.lookup k
+
+makeAcidic ''HighlighterState ['saveHighlight, 'getHighlight]
+
+data States = States
+  { _pasteState       :: AcidState PasteState
+  , _highlighterState :: AcidState HighlighterState
+  }
+makeLens ''States
 
 class HasAcidState m st where
   getAcidState :: m (AcidState st)
@@ -146,20 +169,23 @@ queryMaybe ev f = do
 data Sitemap = Asset FilePath | NewPaste | ShowPaste Key
 derivePrinterParsers ''Sitemap
 
-type Server = RouteT Sitemap (ServerPartT (ReaderT State (StateT Integer IO)))
+type Server = RouteT Sitemap (ServerPartT (ReaderT States (StateT Integer IO)))
 
-instance HasAcidState Server AppState where
-  getAcidState = ask
+instance HasAcidState Server PasteState where
+  getAcidState = askL pasteState
 
-instance HasAcidState (XMLGenT Server) AppState where
-  getAcidState = ask
+instance HasAcidState (XMLGenT Server) PasteState where
+  getAcidState = askL pasteState
+
+instance HasAcidState Server HighlighterState where
+  getAcidState = askL highlighterState
 
 sitemap :: Router Sitemap
 sitemap = (rAsset . (lit "assets" </> anyString))
        <> (rNewPaste)
        <> (rShowPaste . integer)
 
-site :: Site Sitemap (ServerPartT (ReaderT State (StateT Integer IO)) Response)
+site :: Site Sitemap (ServerPartT (ReaderT States (StateT Integer IO)) Response)
 site = boomerangSiteRouteT route sitemap
 
 route :: Sitemap -> Server Response
@@ -180,30 +206,39 @@ route (NewPaste) = do
               <input type="submit" value="Create"/>
             </%>
           %>
-          <% unit "7-24" recentPastesList %>
+          <% unit "7-24" recentPasteStateList %>
         </%>
       Right paste -> do
         k <- update $ SavePaste paste
         seeOtherURL $ ShowPaste k
 
 route (ShowPaste k) =
-    queryMaybe (GetPaste k) $ \paste -> do
-      let text        = paste ^. content
-          highlighted =
-            case lexerFromFilename . T.unpack $ paste ^. fileName of
-              Nothing    -> text
-              Just lexer ->
-                case runLexer lexer $ encodeUtf8 text of
-                  Left _       -> text
-                  Right tokens ->
-                    L.toStrict . renderHtml $ format False tokens
+    queryMaybe (GetPaste k) $ \p -> do
+      highlighted <- highlight k (T.unpack $ p ^. fileName) $ p ^. content
       appTemplate
         <% unit "1"
           <%>
-            <h2><% paste ^. fileName %></h2>
+            <h2><% p ^. fileName %></h2>
             <pre><% cdata . T.unpack $ highlighted %></pre>
           </%>
         %>
+
+highlight ::
+    ( HasAcidState m HighlighterState
+    , MonadIO m
+    ) => Key -> FilePath -> Text -> m Text
+highlight k f t = do
+    h <- query $ GetHighlight k
+    case h of
+      Just t' -> return t'
+      Nothing ->
+        update $ SaveHighlight k $
+          case lexerFromFilename f of
+            Nothing -> t
+            Just l  ->
+              case runLexer l $ encodeUtf8 t of
+                Left _   -> t
+                Right ts -> L.toStrict . renderHtml $ format False ts
 
 
 {---------------------------------------------------------------------------
@@ -276,9 +311,9 @@ unit size body =
       </div>
     </div>
 
-recentPastesList :: XMLGenT Server [HSX.Child Server]
-recentPastesList = do
-    ps <- query RecentPastes
+recentPasteStateList :: XMLGenT Server [HSX.Child Server]
+recentPasteStateList = do
+    ps <- query RecentPasteState
     asChild
       <ol class="recent-pastes">
         <% forM ps $ \(k,p) ->
@@ -365,11 +400,20 @@ pasteForm = mapView dl $ Paste
  -                               Application                               -
  ---------------------------------------------------------------------------}
 
-server :: State -> IO ()
-server st = simpleHTTP nullConf $ do
+server :: AcidState PasteState -> AcidState HighlighterState -> IO ()
+server ps hs = simpleHTTP nullConf $ do
     decodeBody $ defaultBodyPolicy "/tmp/" 0 40960 40960
     implSite (pack "http://localhost:8000") T.empty $
       fmap (mapServerPartT ((`evalStateT` 0) . (`runReaderT` st))) site
+  where
+    st = States ps hs
+
+withState ::
+    ( Default st
+    , IsAcidic st
+    , Typeable st
+    ) => (AcidState st -> IO ()) -> IO ()
+withState = bracket (openLocalState def) createCheckpointAndClose
 
 main :: IO ()
-main = bracket (openLocalState def) createCheckpointAndClose server
+main = withState $ withState . server
