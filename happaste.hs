@@ -361,6 +361,9 @@ css = [$lucius|
       a
         { color : #{color1}
         }
+      *
+        { line-height : 150%
+        }
     }
 
   a
