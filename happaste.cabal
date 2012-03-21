@@ -35,7 +35,7 @@ Executable happaste
     data-default,
     data-lens-fd,
     data-lens-template,
-    digestive-functors,
+    digestive-functors == 0.2.*,
     digestive-functors-happstack,
     digestive-functors-hsp,
     file-embed,
