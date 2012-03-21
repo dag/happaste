@@ -323,9 +323,10 @@ recentPasteStateList = do
 
 css :: Lucius Sitemap
 css = [$lucius|
-  @width  : 60em;
-  @gutter : 1em;
-  @color1 : #327CCB;
+  @width           : 60em;
+  @gutter          : 1em;
+  @color1          : #327CCB;
+  @color1_gradient : #3070C0;
 
   div.yui3-g div.unit
     { margin-left: #{gutter}
@@ -339,6 +340,12 @@ css = [$lucius|
 
   div#header
     { background : #{color1}
+    ; background : -moz-linear-gradient(top, #{color1}, #{color1_gradient})
+    ; background : -webkit-linear-gradient(top, #{color1}, #{color1_gradient})
+    ; background : -webkit-gradient(linear, 0% 0%, 0% 100%,
+                                    from(#{color1}), to(#{color1_gradient}))
+    ; background : -ms-linear-gradient(top, #{color1}, #{color1_gradient})
+    ; background : -o-linear-gradient(top, #{color1}, #{color1_gradient})
     ; h1
         { padding     : .5em 0
         ; margin      : 0
@@ -349,7 +356,8 @@ css = [$lucius|
     }
 
   div#content
-    { textarea
+    { margin-bottom : 1em
+    ; textarea
         { font-family : monospace
         ; width       : 100%
         ; height      : 2400%
@@ -381,10 +389,12 @@ css = [$lucius|
     }
 
   div.highlight
-    { background  : #fafafa
-    ; border-left : .3em solid #{color1}
+    { background        : #fafafa
+    ; border            : .1em solid #eee;
+    ; border-left-width : .4em
     ; pre
         { padding : 1em 1em 1em 1.3em
+        ; margin  : 0
         }
     }
 |]
