@@ -3,6 +3,7 @@
 module Happaste.Types where
 
 import qualified Data.Text        as T
+import qualified HSP.Identity     as HSP
 import qualified HSX.XMLGenerator as HSX
 
 import Control.Monad                  (MonadPlus, mzero, liftM)
@@ -21,8 +22,9 @@ import Data.Text                      (Text)
 import Data.Typeable                  (Typeable)
 import HSX.JMacro                     (IntegerSupply(nextInteger), nextInteger')
 import Happstack.Server               (ServerPartT)
-import Happstack.Server.HSP.HTML      (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT)
+import Happstack.Server.HSP.HTML      (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, XML, renderXML)
 import Happstack.Server.JMacro        ()
+import Language.Javascript.JMacro     (ToJExpr(toJExpr), jmacroE, JExpr(ApplExpr,SelExpr,ValExpr), JVal(JVar), Ident(StrI))
 import Text.Boomerang.TH              (derivePrinterParsers)
 import Text.Digestive.Forms.Happstack ()
 import Text.Lucius                    (Css, renderCss)
@@ -140,3 +142,6 @@ instance (Functor m, Monad m) => EmbedAsChild (RouteT url m) (Lucius url) where
       <style type="text/css">
         <% renderCss $ style url %>
       </style>
+
+instance ToJExpr (HSP.Ident XML) where
+  toJExpr a = [$jmacroE| Y.Node.create(`(renderXML . HSP.evalIdentity $ a)`) |]
