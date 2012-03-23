@@ -8,7 +8,7 @@ import qualified HSX.XMLGenerator as HSX
 import Control.Monad                  (MonadPlus, mzero, liftM)
 import Control.Monad.Reader           (MonadReader, asks, ReaderT)
 import Control.Monad.State            (StateT)
-import Control.Monad.Trans            (MonadIO, lift)
+import Control.Monad.Trans            (MonadIO)
 import Data.Acid                      (AcidState, QueryEvent, UpdateEvent, EventResult)
 import Data.Acid.Advanced             (MethodState, MethodResult, query', update')
 import Data.Default                   (Default(def))
@@ -23,10 +23,11 @@ import HSX.JMacro                     (IntegerSupply(nextInteger), nextInteger')
 import Happstack.Server               (ServerPartT)
 import Happstack.Server.HSP.HTML      (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT)
 import Happstack.Server.JMacro        ()
+import Language.Css.Pretty            (prettyPrint)
+import Language.Css.Syntax            (StyleSheet)
 import Text.Boomerang.TH              (derivePrinterParsers)
 import Text.Digestive.Forms.Happstack ()
-import Text.Lucius                    (Css, renderCss)
-import Web.Routes                     (RouteT, askRouteT)
+import Web.Routes                     (RouteT)
 import Web.Routes.Happstack           ()
 import Web.Routes.XMLGenT             ()
 
@@ -131,12 +132,10 @@ instance HasAcidState Server HighlighterState where
 instance IntegerSupply Server where
   nextInteger = nextInteger'
 
-type Lucius url = (url -> [(Text,Maybe Text)] -> Text) -> Css
-
-instance (Functor m, Monad m) => EmbedAsChild (RouteT url m) (Lucius url) where
-  asChild style = do
-    url <- lift askRouteT
-    asChild
+instance EmbedAsChild Server StyleSheet where
+  asChild style =
+    <%>
       <style type="text/css">
-        <% renderCss $ style url %>
+        <% prettyPrint style %>
       </style>
+    </%>

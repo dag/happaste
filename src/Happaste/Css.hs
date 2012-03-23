@@ -1,83 +1,114 @@
 module Happaste.Css where
 
-import Text.Lucius (lucius)
+import Prelude (($), (++))
 
-import Happaste.Types
+import Language.Css.Build
+import Language.Css.Build.Attributes (type')
+import Language.Css.Build.Idents hiding (content, pre)
+import Language.Css.Build.Tags hiding (em, header)
+import Language.Css.Syntax
 
-css :: Lucius Sitemap
-css = [lucius|
-  @width           : 60em;
-  @gutter          : 1em;
-  @color1          : #327CCB;
-  @color1_gradient : #3070C0;
+gridWidth :: Expr
+gridWidth = em 60
 
-  div.yui3-g div.unit
-    { margin-left: #{gutter}
-    }
+gutter :: Expr
+gutter = em 1
 
-  div.grid
-    { max-width     : #{width}
-    ; margin        : 0 auto
-    ; padding-right : #{gutter}
-    }
+color1 :: Expr
+color1 = cword "#327CCB"
 
-  div#header
-    { background : #{color1}
-    ; background : -moz-linear-gradient(top, #{color1}, #{color1_gradient})
-    ; background : -webkit-linear-gradient(top, #{color1}, #{color1_gradient})
-    ; background : -webkit-gradient(linear, 0% 0%, 0% 100%,
-                                    from(#{color1}), to(#{color1_gradient}))
-    ; background : -ms-linear-gradient(top, #{color1}, #{color1_gradient})
-    ; background : -o-linear-gradient(top, #{color1}, #{color1_gradient})
-    ; h1
-        { padding     : .5em 0
-        ; margin      : 0
-        ; a
-            { color : #fff
-            }
-        }
-    }
+color1Gradient ::Expr
+color1Gradient = cword "#3070C0"
 
-  div#content
-    { margin-bottom : 1em
-    ; textarea
-        { font-family : monospace
-        ; width       : 100%
-        ; height      : 2400%
-        }
-      input[type=submit]
-        { float : right
-        }
-      a
-        { color : #{color1}
-        }
-      *
-        { line-height : 150%
-        }
-    }
+grid :: RuleSet
+grid = div /. "grid" $
+    [ maxWidth     <:> gridWidth
+    , margin       <:> int 0 `space` auto
+    , paddingRight <:> gutter
+    ]
 
-  h1,h2,h3,h4,h5,h6
-    { font-family : "Stoke", serif
-    ; font-weight : 400
-    }
+unit :: RuleSet
+unit = div /. "yui3-g" /- div /. "unit" $
+    [ marginLeft <:> gutter
+    ]
 
-  a
-    { text-decoration : none
-    }
+typography :: [RuleSet]
+typography =
+    [ sels [h1,h2,h3,h4,h5,h6] $
+        [ fontFamily <:> str "Stoke" `comma` serif
+        , fontWeight <:> int 400
+        ]
+    , a $
+        [ textDecoration <:> none
+        ]
+    ]
 
-  ol.recent-pastes
-    { list-style-type : none
-    ; padding-left    : 1em
-    ; border-left     : .2em solid #{color1}
-    }
+header :: [RuleSet]
+header =
+    [ div /# "header" $
+        linearGradient color1 color1Gradient
+    , div /# "header" /- h1 $
+        [ padding <:> em 0.5 `space` int 0
+        , margin  <:> int 0
+        ]
+    , div /# "header" /- star $
+        [ color <:> cword "#fff"
+        ]
+    ]
 
-  div.highlight
-    { background        : #fafafa
-    ; border            : .1em solid #eee;
-    ; border-left-width : .4em
-    ; pre
-        { padding : 1em 1em 1em 1.3em
-        ; margin  : 0
-        }
-    }
-|]
+content :: [RuleSet]
+content =
+    [ div /# "content" $
+        [ marginBottom <:> em 1
+        ]
+    , div /# "content" /- star $
+        [ lineHeight <:> pct 150
+        ]
+    , div /# "content" /- a $
+        [ color <:> color1
+        ]
+    , div /# "content" /- textarea $
+        [ fontFamily <:> monospace
+        , width      <:> pct 100
+        , height     <:> pct 2400
+        ]
+    , div /# "content" /- input ! (type' .= "submit") $
+        [ float <:> right
+        ]
+    , ol /. "recent-pastes" $
+        [ listStyleType <:> none
+        , paddingLeft   <:> em 1
+        , borderLeft    <:> spaces [em 0.2, solid, color1]
+        ]
+    , div /. "highlight" $
+        [ background      <:> cword "#fafafa"
+        , border          <:> spaces [em 0.1, solid, cword "#eee"]
+        , borderLeftWidth <:> em 0.4
+        ]
+    , div /. "highlight" /- pre $
+        [ padding <:> spaces [em 1, em 1, em 1, em 1.3]
+        , margin  <:> int 0
+        ]
+    ]
+
+css :: StyleSheet
+css = ruleSets $ [grid, unit] ++ typography ++ header ++ content
+
+linearGradient :: Expr -> Expr -> [Decl]
+linearGradient from to =
+    [ background <:> from
+    , background <:> func "-moz-linear-gradient" [top, from, to]
+    , background <:> func "-ms-linear-gradient" [top, from, to]
+    , background <:> func "-o-linear-gradient" [top, from, to]
+    , background <:> func "-webkit-gradient" webkit
+    , background <:> func "-webkit-linear-gradient" [top, from, to]
+    ]
+  where
+    func name args = expr $ ident name `fun` commas args
+    webkit =
+      [ ident "linear"
+      , pct 0 `space` pct 0
+      , pct 0 `space` pct 100
+      , expr (ident "from" `fun` from)
+      , expr (ident "to" `fun` to)
+      ]
