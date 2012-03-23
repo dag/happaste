@@ -54,7 +54,7 @@ Executable happaste
     hsx-jmacro,
     ixset,
     jmacro,
-    language-css,
+    language-css >= 0.0.3,
     mtl,
     safecopy,
     template-haskell == 2.5.*,
