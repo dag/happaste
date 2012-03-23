@@ -53,7 +53,7 @@ Executable happaste
     hsx,
     hsx-jmacro,
     ixset,
-    jmacro,
+    jmacro >= 0.5.5,
     mtl,
     safecopy,
     shakespeare-css,
