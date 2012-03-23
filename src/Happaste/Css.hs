@@ -72,7 +72,7 @@ content =
         , width      <:> pct 100
         , height     <:> pct 2400
         ]
-    , div /# "content" /- input ! (type' .= "submit") $
+    , div /# "content" /- input ! type' .= "submit" $
         [ float <:> right
         ]
     , ol /. "recent-pastes" $
