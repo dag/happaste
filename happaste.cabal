@@ -6,15 +6,22 @@ Build-Type         : Simple
 Extra-Source-Files : assets/*.css
 
 Executable happaste
-  Main-Is       : happaste.hs
-  GHC-Options   :
+  HS-Source-Dirs : src
+  Main-Is        : Main.hs
+  Other-Modules  :
+    Happaste.Css
+    Happaste.Forms
+    Happaste.Html
+    Happaste.Routes
+    Happaste.Scripts
+    Happaste.State
+    Happaste.Types
+  GHC-Options    :
     -Wall
     -fno-warn-orphans
     -fno-warn-unused-do-bind
-    -fno-warn-unused-imports
     -threaded -rtsopts -with-rtsopts=-N
-    -F -pgmF trhsx
-  Extensions    :
+  Extensions     :
     DeriveDataTypeable
     FlexibleContexts
     FlexibleInstances
@@ -25,7 +32,7 @@ Executable happaste
     TemplateHaskell
     TypeFamilies
     TypeSynonymInstances
-  Build-Depends :
+  Build-Depends  :
     acid-state,
     base == 4.*,
     blaze-html,
