@@ -17,7 +17,7 @@ gutter = em 1
 color1 :: Expr
 color1 = cword "#327CCB"
 
-color1Gradient ::Expr
+color1Gradient :: Expr
 color1Gradient = cword "#3070C0"
 
 grid :: RuleSet
