@@ -84,6 +84,7 @@ content =
         [ background      <:> cword "#fafafa"
         , border          <:> spaces [em 0.1, solid, cword "#eee"]
         , borderLeftWidth <:> em 0.4
+        , overflow        <:> auto
         ]
     , div /. "highlight" /- pre $
         [ padding <:> spaces [em 1, em 1, em 1, em 1.3]
