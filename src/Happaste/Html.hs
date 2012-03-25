@@ -9,14 +9,15 @@ import Data.Lens                 ((^.))
 import HSX.JMacro                (IntegerSupply)
 import Happstack.Server          (Response, ToMessage, toResponse)
 import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, XMLGenerator, genEElement)
+import Language.Css.Syntax       (StyleSheet)
 import Web.Routes.XMLGenT        ()
 
-import Happaste.Css
+import Happaste.Css (css)
 import Happaste.State
 import Happaste.Types
 
 appTemplate ::
-    ( EmbedAsChild m (Lucius Sitemap)
+    ( EmbedAsChild m StyleSheet
     , EmbedAsChild m c
     , XMLGenerator m
     , ToMessage (HSX.XML m)
