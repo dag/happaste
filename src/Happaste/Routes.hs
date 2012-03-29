@@ -12,12 +12,10 @@ import Control.Category                 (Category((.)))
 import Control.Monad                    (MonadPlus, mzero)
 import Control.Monad.Reader             (ReaderT)
 import Control.Monad.State              (StateT)
-import Control.Monad.Trans              (MonadIO)
 import Data.ByteString                  (ByteString)
 import Data.FileEmbed                   (embedDir)
 import Data.Lens                        ((^.))
 import Data.Map                         (Map)
-import Data.Text                        (Text)
 import Data.Text.Encoding               (encodeUtf8)
 import Happstack.Server                 (ServerPartT, Response, ToMessage, toResponse, ok, setHeaderM)
 import Happstack.Server.FileServe       (guessContentTypeM, mimeTypes)
@@ -35,6 +33,9 @@ import Happaste.Forms
 import Happaste.Html
 import Happaste.State
 import Happaste.Types
+
+assets :: Map FilePath ByteString
+assets = Map.fromList $(embedDir "assets")
 
 sitemap :: Router Sitemap
 sitemap = (rAsset . (lit "assets" </> anyString))
@@ -70,24 +71,17 @@ route (NewPaste) = do
 
 route (ShowPaste k) =
     queryMaybe (GetPaste k) $ \p -> do
-      highlighted <- highlight k (T.unpack $ p ^. fileName) $ p ^. content
+      highlighted <- get (T.unpack $ p ^. fileName) $ p ^. content
       appTemplate $ unit "1"
         <%>
           <h2><% p ^. fileName %></h2>
           <% cdata . T.unpack $ highlighted %>
         </%>
-
-highlight ::
-    ( HasAcidState m HighlighterState
-    , MonadIO m
-    ) => Key -> FilePath -> Text -> m Text
-highlight k f t =
-    query (GetHighlight k) >>= maybe create return
   where
-    create   = update . SaveHighlight k . maybe t render $
-                 lexerFromFilename f
-    render l = either (const t) (L.toStrict . renderHtml . format False) $
-                 runLexer l $ encodeUtf8 t
-
-assets :: Map FilePath ByteString
-assets = Map.fromList $(embedDir "assets")
+    get f t =
+        query (GetHighlight k) >>= maybe create return
+      where
+        create   = update . SaveHighlight k . maybe t render $
+                     lexerFromFilename f
+        render l = either (const t) (L.toStrict . renderHtml . format False) $
+                     runLexer l $ encodeUtf8 t
