@@ -81,18 +81,13 @@ highlight ::
     ( HasAcidState m HighlighterState
     , MonadIO m
     ) => Key -> FilePath -> Text -> m Text
-highlight k f t = do
-    h <- query $ GetHighlight k
-    case h of
-      Just t' -> return t'
-      Nothing ->
-        update $ SaveHighlight k $
-          case lexerFromFilename f of
-            Nothing -> t
-            Just l  ->
-              case runLexer l $ encodeUtf8 t of
-                Left _   -> t
-                Right ts -> L.toStrict . renderHtml $ format False ts
+highlight k f t =
+    query (GetHighlight k) >>= maybe create return
+  where
+    create   = update . SaveHighlight k . maybe t render $
+                 lexerFromFilename f
+    render l = either (const t) (L.toStrict . renderHtml . format False) $
+                 runLexer l $ encodeUtf8 t
 
 assets :: Map FilePath ByteString
 assets = Map.fromList $(embedDir "assets")
