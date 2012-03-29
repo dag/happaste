@@ -49,9 +49,7 @@ route :: Sitemap -> Server Response
 route (Asset f) = do
     mime <- guessContentTypeM mimeTypes f
     setHeaderM "Content-Type" mime
-    case Map.lookup f assets of
-      Nothing -> mzero
-      Just bs -> ok $ toResponse bs
+    maybe mzero (ok . toResponse) $ Map.lookup f assets
 
 route (NewPaste) = do
     r <- eitherHappstackForm pasteForm "paste"
