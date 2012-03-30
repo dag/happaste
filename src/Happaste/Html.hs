@@ -2,6 +2,8 @@
 
 module Happaste.Html where
 
+import Prelude hiding (head)
+
 import qualified HSX.XMLGenerator as HSX
 
 import Control.Monad             (liftM)
@@ -9,65 +11,64 @@ import Data.Lens                 ((^.))
 import Happstack.Server          (Response, ToMessage, getHeaderM, toResponse)
 import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, XMLGenerator, genEElement)
 import Web.Routes.XMLGenT        ()
-import Language.Javascript.JMacro
 
-import Happaste.Css (css)
+import Happaste.Css     (css)
+import Happaste.Scripts (pjax)
 import Happaste.State
 import Happaste.Types
 
 each :: [a] -> (a -> b) -> [b]
 each = flip map
 
-appTemplate :: (EmbedAsChild Server c) => c -> Server Response
+appTemplate :: EmbedAsChild Server c => c -> Server Response
 appTemplate body = do
-    pjax <- getHeaderM "X-PJAX"
-    liftM toResponse $ unXMLGenT $
-      case pjax of
-        Just _ ->
-          <div class="grid">
-            <div class="yui3-g">
-              <% body %>
-            </div>
-          </div>
-        Nothing ->
-          <html>
-            <head>
-              <% stylesheet $ Asset "yui.css" %>
-              <% stylesheet $ Asset "highlighter.css" %>
-              <% stylesheet "http://fonts.googleapis.com/css?family=Stoke" %>
-              <% css %>
-            </head>
-            <body>
-              <div id="header">
-                <div class="grid">
-                  <div class="yui3-g">
-                    <% unit "1"
-                      <h1><a href=NewPaste class="pjax">Happaste</a></h1>
-                    %>
-                  </div>
-                </div>
-              </div>
-              <div id="content">
-                <div class="grid">
-                  <div class="yui3-g">
-                    <% body %>
-                  </div>
-                </div>
-              </div>
-              <script src=(Asset "yui.js")/>
-              <% [$jmacro|
-                YUI().use "pjax" \y ->
-                  new y.Pjax { container: "#content"
-                             , linkSelector: "a.pjax"
-                             }
-              |] %>
-            </body>
-          </html>
+    xpjax <- getHeaderM "X-PJAX"
+    liftM toResponse $ unXMLGenT $ maybe html (const $ grid body) xpjax
   where
-    stylesheet :: (XMLGenerator x, EmbedAsAttr x (Attr String url))
-               => url -> XMLGenT x (HSX.XML x)
-    stylesheet url =
-      <link rel="stylesheet" type="text/css" href=url/>
+    html =
+      <html>
+        <% head %>
+        <body>
+          <% header %>
+          <div id="content"><% grid body %></div>
+          <script src=(Asset "yui.js")/>
+          <% pjax %>
+        </body>
+      </html>
+
+stylesheet ::
+    ( XMLGenerator m
+    , EmbedAsAttr m (Attr String url)
+    ) => url -> XMLGenT m (HSX.XML m)
+stylesheet url =
+  <link rel="stylesheet" type="text/css" href=url/>
+
+head :: XMLGenT Server (HSX.XML Server)
+head =
+  <head>
+    <% stylesheet $ Asset "yui.css" %>
+    <% stylesheet $ Asset "highlighter.css" %>
+    <% stylesheet "http://fonts.googleapis.com/css?family=Stoke" %>
+    <% css %>
+  </head>
+
+header :: XMLGenT Server (HSX.XML Server)
+header =
+  <div id="header">
+    <div class="grid">
+      <div class="yui3-g">
+        <% unit "1" <h1><a href=NewPaste class="pjax">Happaste</a></h1> %>
+      </div>
+    </div>
+  </div>
+
+grid :: EmbedAsChild Server c => c -> XMLGenT Server (HSX.XML Server)
+grid body =
+  <div class="grid">
+    <div class="yui3-g">
+      <% body %>
+    </div>
+  </div>
 
 unit ::
     ( EmbedAsChild m c
