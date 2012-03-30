@@ -9,8 +9,8 @@ import Data.Text  (Text)
 
 import Happaste.Types
 
-recentPasteState :: Query PasteState [(Key,Paste)]
-recentPasteState = pastes %. take 10 . toDescList (Proxy :: Proxy Key)
+recentPastes :: Query PasteState [(Key,Paste)]
+recentPastes = pastes %. take 10 . toDescList (Proxy :: Proxy Key)
 
 savePaste :: Paste -> Update PasteState Key
 savePaste p = do
@@ -21,7 +21,7 @@ savePaste p = do
 getPaste :: Key -> Query PasteState (Maybe Paste)
 getPaste k = pastes %. fmap snd . getOne . getEQ k
 
-makeAcidic ''PasteState ['recentPasteState, 'savePaste, 'getPaste]
+makeAcidic ''PasteState ['recentPastes, 'savePaste, 'getPaste]
 
 saveHighlight :: Key -> Text -> Update HighlighterState Text
 saveHighlight k t = do

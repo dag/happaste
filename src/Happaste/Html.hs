@@ -69,9 +69,9 @@ unit size body =
       </div>
     </div>
 
-recentPasteStateList :: XMLGenT Server (HSX.XML Server)
-recentPasteStateList = do
-    { ps <- query RecentPasteState
+recentPastesList :: XMLGenT Server (HSX.XML Server)
+recentPastesList = do
+    { ps <- query RecentPastes
     ; <ol class="recent-pastes">
         <% forM ps $ \(k,p) ->
           <li><a href=(ShowPaste k)><% p ^. fileName %></a></li>

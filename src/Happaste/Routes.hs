@@ -63,7 +63,7 @@ route (NewPaste) = do
               <input type="submit" value="Create"/>
             </%>
           %>
-          <% unit "7-24" recentPasteStateList %>
+          <% unit "7-24" recentPastesList %>
         </%>
       Right paste -> do
         k <- update $ SavePaste paste
