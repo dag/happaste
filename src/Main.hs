@@ -10,6 +10,7 @@ import Data.Acid.Local      (createCheckpointAndClose)
 import Data.Default         (Default(def))
 import Data.Typeable        (Typeable)
 import Happstack.Server     (mapServerPartT, simpleHTTP, nullConf, decodeBody, defaultBodyPolicy)
+import System.Log.Logger    (updateGlobalLogger, rootLoggerName, setLevel, Priority(DEBUG))
 import Web.Routes.Happstack (implSite)
 
 import Happaste.Routes
@@ -31,4 +32,6 @@ withState ::
 withState = bracket (openLocalState def) createCheckpointAndClose
 
 main :: IO ()
-main = withState $ withState . server
+main = do
+    updateGlobalLogger rootLoggerName $ setLevel DEBUG
+    withState $ withState . server
