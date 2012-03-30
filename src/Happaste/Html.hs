@@ -45,6 +45,7 @@ stylesheet url =
 head :: Template
 head =
     <head>
+      <title>Happaste</title>
       <% stylesheet $ Asset "yui.css" %>
       <% stylesheet $ Asset "highlighter.css" %>
       <% stylesheet "http://fonts.googleapis.com/css?family=Stoke" %>
