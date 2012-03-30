@@ -9,7 +9,7 @@ import qualified HSX.XMLGenerator as HSX
 import Control.Monad             (liftM)
 import Data.Lens                 ((^.))
 import Happstack.Server          (Response, ToMessage, getHeaderM, toResponse)
-import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, XMLGenerator, genEElement)
+import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, genEElement)
 import Web.Routes.XMLGenT        ()
 
 import Happaste.Css     (css)
@@ -36,10 +36,8 @@ appTemplate body = do
         </body>
       </html>
 
-stylesheet ::
-    ( XMLGenerator m
-    , EmbedAsAttr m (Attr String url)
-    ) => url -> XMLGenT m (HSX.XML m)
+stylesheet :: EmbedAsAttr Server (Attr String url)
+           => url -> XMLGenT Server (HSX.XML Server)
 stylesheet url =
     <link rel="stylesheet" type="text/css" href=url/>
 
