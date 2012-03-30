@@ -4,7 +4,7 @@ module Happaste.Html where
 
 import qualified HSX.XMLGenerator as HSX
 
-import Control.Monad             (forM, liftM)
+import Control.Monad             (liftM)
 import Data.Lens                 ((^.))
 import HSX.JMacro                (IntegerSupply)
 import Happstack.Server          (Response, ToMessage, toResponse)
@@ -15,6 +15,9 @@ import Web.Routes.XMLGenT        ()
 import Happaste.Css (css)
 import Happaste.State
 import Happaste.Types
+
+each :: [a] -> (a -> b) -> [b]
+each = flip map
 
 appTemplate ::
     ( EmbedAsChild m StyleSheet
@@ -72,7 +75,7 @@ unit size body =
 recentPastesList :: XMLGenT Server (HSX.XML Server)
 recentPastesList = query RecentPastes >>= \ps ->
     <ol class="recent-pastes">
-      <% forM ps $ \(k,p) ->
+      <% each ps $ \(k,p) ->
         <li><a href=(ShowPaste k)><% p ^. fileName %></a></li>
       %>
     </ol>
