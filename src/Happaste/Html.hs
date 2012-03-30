@@ -17,6 +17,8 @@ import Happaste.Scripts (pjax)
 import Happaste.State
 import Happaste.Types
 
+type Template = XMLGenT Server (HSX.XML Server)
+
 each :: [a] -> (a -> b) -> [b]
 each = flip map
 
@@ -36,12 +38,11 @@ appTemplate body = do
         </body>
       </html>
 
-stylesheet :: EmbedAsAttr Server (Attr String url)
-           => url -> XMLGenT Server (HSX.XML Server)
+stylesheet :: EmbedAsAttr Server (Attr String url) => url -> Template
 stylesheet url =
     <link rel="stylesheet" type="text/css" href=url/>
 
-head :: XMLGenT Server (HSX.XML Server)
+head :: Template
 head =
     <head>
       <% stylesheet $ Asset "yui.css" %>
@@ -50,7 +51,7 @@ head =
       <% css %>
     </head>
 
-header :: XMLGenT Server (HSX.XML Server)
+header :: Template
 header =
     <div id="header">
       <div class="grid">
@@ -60,7 +61,7 @@ header =
       </div>
     </div>
 
-grid :: EmbedAsChild Server c => c -> XMLGenT Server (HSX.XML Server)
+grid :: EmbedAsChild Server c => c -> Template
 grid body =
     <div class="grid">
       <div class="yui3-g">
@@ -68,11 +69,7 @@ grid body =
       </div>
     </div>
 
-unit ::
-    ( EmbedAsChild m c
-    , EmbedAsChild m (HSX.XML m)
-    , EmbedAsAttr m (Attr String String)
-    ) => String -> c -> XMLGenT m (HSX.XML m)
+unit :: EmbedAsChild Server c => String -> c -> Template
 unit size body =
     <div class=("yui3-u-" ++ size)>
       <div class="unit">
@@ -80,7 +77,7 @@ unit size body =
       </div>
     </div>
 
-recentPastesList :: XMLGenT Server (HSX.XML Server)
+recentPastesList :: Template
 recentPastesList = query RecentPastes >>= \ps ->
     <ol class="recent-pastes">
       <% each ps $ \(k,p) ->
