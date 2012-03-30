@@ -41,34 +41,34 @@ stylesheet ::
     , EmbedAsAttr m (Attr String url)
     ) => url -> XMLGenT m (HSX.XML m)
 stylesheet url =
-  <link rel="stylesheet" type="text/css" href=url/>
+    <link rel="stylesheet" type="text/css" href=url/>
 
 head :: XMLGenT Server (HSX.XML Server)
 head =
-  <head>
-    <% stylesheet $ Asset "yui.css" %>
-    <% stylesheet $ Asset "highlighter.css" %>
-    <% stylesheet "http://fonts.googleapis.com/css?family=Stoke" %>
-    <% css %>
-  </head>
+    <head>
+      <% stylesheet $ Asset "yui.css" %>
+      <% stylesheet $ Asset "highlighter.css" %>
+      <% stylesheet "http://fonts.googleapis.com/css?family=Stoke" %>
+      <% css %>
+    </head>
 
 header :: XMLGenT Server (HSX.XML Server)
 header =
-  <div id="header">
-    <div class="grid">
-      <div class="yui3-g">
-        <% unit "1" <h1><a href=NewPaste class="pjax">Happaste</a></h1> %>
+    <div id="header">
+      <div class="grid">
+        <div class="yui3-g">
+          <% unit "1" <h1><a href=NewPaste class="pjax">Happaste</a></h1> %>
+        </div>
       </div>
     </div>
-  </div>
 
 grid :: EmbedAsChild Server c => c -> XMLGenT Server (HSX.XML Server)
 grid body =
-  <div class="grid">
-    <div class="yui3-g">
-      <% body %>
+    <div class="grid">
+      <div class="yui3-g">
+        <% body %>
+      </div>
     </div>
-  </div>
 
 unit ::
     ( EmbedAsChild m c
