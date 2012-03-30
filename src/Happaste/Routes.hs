@@ -52,8 +52,7 @@ route :: Sitemap -> Server Response
 
 route (Asset f) = do
     neverExpires
-    mime <- guessContentTypeM mimeTypes f
-    setHeaderM "Content-Type" mime
+    guessContentTypeM mimeTypes f >>= setHeaderM "Content-Type"
     maybe mzero (ok . toResponse) $ Map.lookup f assets
 
 route (NewPaste) = do
