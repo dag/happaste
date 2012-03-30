@@ -37,6 +37,9 @@ import Happaste.Types
 assets :: Map FilePath ByteString
 assets = Map.fromList $(embedDir "assets")
 
+neverExpires :: Server ()
+neverExpires = setHeaderM "Expires" "Mon, 31 Dec 2035 12:00:00 GMT"
+
 sitemap :: Router Sitemap
 sitemap = (rAsset . (lit "assets" </> anyString))
        <> (rNewPaste)
@@ -48,6 +51,7 @@ site = boomerangSiteRouteT route sitemap
 route :: Sitemap -> Server Response
 
 route (Asset f) = do
+    neverExpires
     mime <- guessContentTypeM mimeTypes f
     setHeaderM "Content-Type" mime
     maybe mzero (ok . toResponse) $ Map.lookup f assets
@@ -69,7 +73,8 @@ route (NewPaste) = do
         k <- update $ SavePaste paste
         seeOtherURL $ ShowPaste k
 
-route (ShowPaste k) =
+route (ShowPaste k) = do
+    neverExpires
     queryMaybe (GetPaste k) $ \p -> do
       highlighted <- get (T.unpack $ p ^. fileName) $ p ^. content
       appTemplate $ unit "1"
