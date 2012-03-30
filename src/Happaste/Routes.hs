@@ -68,9 +68,8 @@ route (NewPaste) = do
           %>
           <% unit "7-24" recentPastesList %>
         </%>
-      Right paste -> do
-        k <- update $ SavePaste paste
-        seeOtherURL $ ShowPaste k
+      Right paste ->
+        update (SavePaste paste) >>= seeOtherURL . ShowPaste
 
 route (ShowPaste k) = do
     neverExpires
