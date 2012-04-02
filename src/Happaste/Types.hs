@@ -33,12 +33,12 @@ import Web.Routes                     (RouteT)
 import Web.Routes.Happstack           ()
 import Web.Routes.XMLGenT             ()
 
-askL :: MonadReader r m => Lens r t -> m t
-askL = asks . getL
+summon :: MonadReader r m => Lens r t -> m t
+summon = asks . getL
 
 infixr 4 %.
 (%.) :: MonadReader r m => Lens r t -> (t -> b) -> m b
-(%.) = flip liftM . askL
+(%.) = flip liftM . summon
 
 type Key = Integer
 
@@ -123,13 +123,13 @@ derivePrinterParsers ''Sitemap
 type Server = RouteT Sitemap (ServerPartT (ReaderT States (StateT Integer IO)))
 
 instance HasAcidState Server PasteState where
-  getAcidState = askL pasteState
+  getAcidState = summon pasteState
 
 instance HasAcidState (XMLGenT Server) PasteState where
-  getAcidState = askL pasteState
+  getAcidState = summon pasteState
 
 instance HasAcidState Server HighlighterState where
-  getAcidState = askL highlighterState
+  getAcidState = summon highlighterState
 
 instance IntegerSupply Server where
   nextInteger = nextInteger'
