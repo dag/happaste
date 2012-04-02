@@ -3,7 +3,7 @@ Version            : 0.1.0
 License            : BSD3
 Cabal-Version      : >= 1.9.2
 Build-Type         : Simple
-Extra-Source-Files : assets/*.css
+Extra-Source-Files : assets/*.css assets/*.js
 
 Executable happaste
   HS-Source-Dirs : src
