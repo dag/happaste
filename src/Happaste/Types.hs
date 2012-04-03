@@ -24,11 +24,11 @@ import HSX.JMacro                     (IntegerSupply(nextInteger), nextInteger')
 import Happstack.Server               (ServerPartT)
 import Happstack.Server.HSP.HTML      (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, XML, renderXML)
 import Happstack.Server.JMacro        ()
-import Language.Javascript.JMacro     (ToJExpr(toJExpr))
 import Language.Css.Pretty            (prettyPrint)
 import Language.Css.Syntax            (StyleSheet)
+import Language.Javascript.JMacro     (ToJExpr(toJExpr))
 import Text.Boomerang.TH              (derivePrinterParsers)
-import Text.Digestive.Forms.Happstack ()
+import Text.Digestive.Forms.Happstack (HappstackForm)
 import Web.Routes                     (RouteT)
 import Web.Routes.Happstack           ()
 import Web.Routes.XMLGenT             ()
@@ -144,3 +144,7 @@ instance EmbedAsChild Server StyleSheet where
 
 instance ToJExpr (Ident XML) where
   toJExpr = toJExpr . renderXML . evalIdentity
+
+type Template = XMLGenT Server (HSX.XML Server)
+
+type Form e = HappstackForm Server e [Template] Paste

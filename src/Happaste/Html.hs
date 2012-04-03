@@ -4,14 +4,11 @@ module Happaste.Html where
 
 import Prelude hiding (head)
 
-import qualified Data.Text        as T
-import qualified HSX.XMLGenerator as HSX
-
 import Control.Monad             (liftM)
 import Data.Lens                 ((^.))
-import Data.Text                 (Text)
+import Data.Text                 (Text, unpack)
 import Happstack.Server          (Response, ToMessage, getHeaderM, toResponse)
-import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, genEElement, cdata)
+import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), unXMLGenT, genEElement, cdata)
 import Text.Digestive.HSP.Html4  (form)
 import Web.Routes.XMLGenT        ()
 
@@ -19,8 +16,6 @@ import Happaste.Css     (css)
 import Happaste.Scripts (pjax)
 import Happaste.State
 import Happaste.Types
-
-type Template = XMLGenT Server (HSX.XML Server)
 
 each :: [a] -> (a -> b) -> [b]
 each = flip map
@@ -110,5 +105,5 @@ showPastePage p h =
     appTemplate $ unit "1"
       <%>
         <h2><% p ^. fileName %></h2>
-        <% cdata . T.unpack $ h %>
+        <% cdata . unpack $ h %>
       </%>

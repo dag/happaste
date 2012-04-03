@@ -2,18 +2,15 @@
 
 module Happaste.Forms where
 
-import qualified HSX.XMLGenerator as HSX
-
 import Control.Applicative       ((<$>), (<*>))
 import Data.Text                 (pack)
-import Happstack.Server          (Input)
-import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), genElement, XMLGenT)
-import Text.Digestive            ((++>), Form, mapView)
+import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), genElement)
+import Text.Digestive            ((++>), mapView)
 import Text.Digestive.HSP.Html4  (label, inputText, inputTextArea)
 
 import Happaste.Types
 
-pasteForm :: Form Server [Input] e [XMLGenT Server (HSX.XML Server)] Paste
+pasteForm :: Form e
 pasteForm = mapView dl $ Paste
     <$>   dt `mapView` label "File name:"
       ++> dd `mapView` inputText Nothing
