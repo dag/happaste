@@ -4,12 +4,15 @@ module Happaste.Html where
 
 import Prelude hiding (head)
 
+import qualified Data.Text        as T
 import qualified HSX.XMLGenerator as HSX
 
 import Control.Monad             (liftM)
 import Data.Lens                 ((^.))
+import Data.Text                 (Text)
 import Happstack.Server          (Response, ToMessage, getHeaderM, toResponse)
-import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, genEElement)
+import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, unXMLGenT, genEElement, cdata)
+import Text.Digestive.HSP.Html4  (form)
 import Web.Routes.XMLGenT        ()
 
 import Happaste.Css     (css)
@@ -78,6 +81,14 @@ unit size body =
       </div>
     </div>
 
+newPasteForm :: [Template] -> Template
+newPasteForm f =
+    form NewPaste
+      <%>
+        <% f %>
+        <input type="submit" value="Create"/>
+      </%>
+
 recentPastesList :: Template
 recentPastesList = query RecentPastes >>= \ps ->
     <ol class="recent-pastes">
@@ -85,3 +96,19 @@ recentPastesList = query RecentPastes >>= \ps ->
         <li><a href=(ShowPaste k) class="pjax"><% p ^. fileName %></a></li>
       %>
     </ol>
+
+newPastePage :: [Template] -> Server Response
+newPastePage f =
+    appTemplate
+      <%>
+        <% unit "17-24" $ newPasteForm f %>
+        <% unit "7-24" recentPastesList %>
+      </%>
+
+showPastePage :: Paste -> Text -> Server Response
+showPastePage p h =
+    appTemplate $ unit "1"
+      <%>
+        <h2><% p ^. fileName %></h2>
+        <% cdata . T.unpack $ h %>
+      </%>

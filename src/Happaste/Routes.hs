@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -F -pgmF trhsx #-}
-
 module Happaste.Routes where
 
 import Prelude hiding ((.))
@@ -19,10 +17,8 @@ import Data.Map                         (Map)
 import Data.Text.Encoding               (encodeUtf8)
 import Happstack.Server                 (ServerPartT, Response, ToMessage, toResponse, ok, setHeaderM)
 import Happstack.Server.FileServe       (guessContentTypeM, mimeTypes)
-import Happstack.Server.HSP.HTML        (EmbedAsChild(asChild), EmbedAsAttr, cdata, genElement, asAttr, Attr((:=)), genEElement)
 import Text.Blaze.Renderer.Text         (renderHtml)
 import Text.Digestive.Forms.Happstack   (eitherHappstackForm)
-import Text.Digestive.HSP.Html4         (form)
 import Text.Highlighter                 (lexerFromFilename, runLexer)
 import Text.Highlighter.Formatters.Html (format)
 import Web.Routes                       (Site)
@@ -41,9 +37,9 @@ neverExpires :: Server ()
 neverExpires = setHeaderM "Expires" "Mon, 31 Dec 2035 12:00:00 GMT"
 
 sitemap :: Router Sitemap
-sitemap = (rAsset . (lit "assets" </> anyString))
-       <> (rNewPaste)
-       <> (rShowPaste . integer)
+sitemap = rAsset . lit "assets" </> anyString
+       <> rNewPaste
+       <> rShowPaste . integer
 
 site :: Site Sitemap (ServerPartT (ReaderT States (StateT Integer IO)) Response)
 site = boomerangSiteRouteT route sitemap
@@ -58,28 +54,14 @@ route (Asset f) = do
 route (NewPaste) = do
     r <- eitherHappstackForm pasteForm "paste"
     case r of
-      Left f -> appTemplate
-        <%>
-          <% unit "17-24" $ form NewPaste
-            <%>
-              <% f %>
-              <input type="submit" value="Create"/>
-            </%>
-          %>
-          <% unit "7-24" recentPastesList %>
-        </%>
-      Right paste ->
-        update (SavePaste paste) >>= seeOtherURL . ShowPaste
+      Left f      -> newPastePage f
+      Right paste -> update (SavePaste paste) >>= seeOtherURL . ShowPaste
 
 route (ShowPaste k) = do
     neverExpires
     queryMaybe (GetPaste k) $ \p -> do
-      highlighted <- get (T.unpack $ p ^. fileName) $ p ^. content
-      appTemplate $ unit "1"
-        <%>
-          <h2><% p ^. fileName %></h2>
-          <% cdata . T.unpack $ highlighted %>
-        </%>
+      h <- get (T.unpack $ p ^. fileName) $ p ^. content
+      showPastePage p h
   where
     get f t =
         query (GetHighlight k) >>= maybe create return
