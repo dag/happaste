@@ -85,7 +85,8 @@ newPasteForm f =
       </%>
 
 recentPastesList :: Template
-recentPastesList = query RecentPastes >>= \ps ->
+recentPastesList = do
+    ps <- query RecentPastes
     <ol class="recent-pastes">
       <% each ps $ \(k,p) ->
         <li><a href=(ShowPaste k) class="pjax"><% p ^. fileName %></a></li>
