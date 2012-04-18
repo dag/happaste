@@ -53,11 +53,9 @@ head =
 header :: Template
 header =
     <div id="header">
-      <div class="grid">
-        <div class="yui3-g">
-          <% unit "1" <h1><a href=NewPaste class="pjax">Happaste</a></h1> %>
-        </div>
-      </div>
+      <% grid $ unit "1"
+        <h1><a href=NewPaste class="pjax">Happaste</a></h1>
+      %>
     </div>
 
 grid :: EmbedAsChild Server c => c -> Template
