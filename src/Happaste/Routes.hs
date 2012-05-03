@@ -37,31 +37,31 @@ neverExpires :: Server ()
 neverExpires = setHeaderM "Expires" "Mon, 31 Dec 2035 12:00:00 GMT"
 
 sitemap :: Router Sitemap
-sitemap = rAsset . lit "assets" </> anyString
-       <> rNewPaste
-       <> rShowPaste . integer
+sitemap = rAssetURL . lit "assets" </> anyString
+       <> rCreatePasteURL
+       <> rGetPasteURL . integer
 
 site :: Site Sitemap (ServerPartT (ReaderT States (StateT Integer IO)) Response)
 site = boomerangSiteRouteT route sitemap
 
 route :: Sitemap -> Server Response
 
-route (Asset f) = do
+route (AssetURL f) = do
     neverExpires
     guessContentTypeM mimeTypes f >>= setHeaderM "Content-Type"
     maybe mzero (ok . toResponse) $ Map.lookup f assets
 
-route (NewPaste) = do
+route (CreatePasteURL) = do
     r <- eitherHappstackForm pasteForm "paste"
     case r of
-      Left f      -> newPastePage f
-      Right paste -> update (SavePaste paste) >>= seeOtherURL . ShowPaste
+      Left f      -> createPastePage f
+      Right paste -> update (CreatePaste paste) >>= seeOtherURL . GetPasteURL
 
-route (ShowPaste k) = do
+route (GetPasteURL k) = do
     neverExpires
     queryMaybe (GetPaste k) $ \p -> do
       h <- get (T.unpack $ p ^. fileName) $ p ^. content
-      showPastePage p h
+      getPastePage p h
   where
     get f t =
         query (GetHighlight k) >>= maybe create return

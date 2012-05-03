@@ -12,8 +12,8 @@ import Happaste.Types
 recentPastes :: Query PasteState [(Key,Paste)]
 recentPastes = pastes %. take 10 . toDescList (Proxy :: Proxy Key)
 
-savePaste :: Paste -> Update PasteState Key
-savePaste p = do
+createPaste :: Paste -> Update PasteState Key
+createPaste p = do
     k <- nextKey %= succ
     pastes %= insert (k,p)
     return k
@@ -21,7 +21,7 @@ savePaste p = do
 getPaste :: Key -> Query PasteState (Maybe Paste)
 getPaste k = pastes %. fmap snd . getOne . getEQ k
 
-makeAcidic ''PasteState ['recentPastes, 'savePaste, 'getPaste]
+makeAcidic ''PasteState ['recentPastes, 'createPaste, 'getPaste]
 
 saveHighlight :: Key -> Text -> Update HighlighterState Text
 saveHighlight k t = do

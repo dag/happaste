@@ -31,7 +31,7 @@ appTemplate body = do
         <body>
           <% header %>
           <div id="content"><% grid body %></div>
-          <script src=(Asset "yui.js")/>
+          <script src=(AssetURL "yui.js")/>
           <% pjax %>
         </body>
       </html>
@@ -44,8 +44,8 @@ head :: Template
 head =
     <head>
       <title>Happaste</title>
-      <% stylesheet $ Asset "yui.css" %>
-      <% stylesheet $ Asset "highlighter.css" %>
+      <% stylesheet $ AssetURL "yui.css" %>
+      <% stylesheet $ AssetURL "highlighter.css" %>
       <% stylesheet "http://fonts.googleapis.com/css?family=Stoke" %>
       <% css %>
     </head>
@@ -54,7 +54,7 @@ header :: Template
 header =
     <div id="header">
       <% grid $ unit "1"
-        <h1><a href=NewPaste class="pjax">Happaste</a></h1>
+        <h1><a href=CreatePasteURL class="pjax">Happaste</a></h1>
       %>
     </div>
 
@@ -74,9 +74,9 @@ unit size body =
       </div>
     </div>
 
-newPasteForm :: [Template] -> Template
-newPasteForm f =
-    form NewPaste
+createPasteForm :: [Template] -> Template
+createPasteForm f =
+    form CreatePasteURL
       <%>
         <% f %>
         <input type="submit" value="Create"/>
@@ -87,20 +87,20 @@ recentPastesList = do
     ps <- query RecentPastes
     <ol class="recent-pastes">
       <% each ps $ \(k,p) ->
-        <li><a href=(ShowPaste k) class="pjax"><% p ^. fileName %></a></li>
+        <li><a href=(GetPasteURL k) class="pjax"><% p ^. fileName %></a></li>
       %>
     </ol>
 
-newPastePage :: [Template] -> Server Response
-newPastePage f =
+createPastePage :: [Template] -> Server Response
+createPastePage f =
     appTemplate
       <%>
-        <% unit "17-24" $ newPasteForm f %>
+        <% unit "17-24" $ createPasteForm f %>
         <% unit "7-24" recentPastesList %>
       </%>
 
-showPastePage :: Paste -> Text -> Server Response
-showPastePage p h =
+getPastePage :: Paste -> Text -> Server Response
+getPastePage p h =
     appTemplate $ unit "1"
       <%>
         <h2><% p ^. fileName %></h2>

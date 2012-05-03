@@ -117,7 +117,7 @@ queryMaybe ev f = do
     m <- query ev
     maybe mzero f m
 
-data Sitemap = Asset FilePath | NewPaste | ShowPaste Key
+data Sitemap = AssetURL FilePath | CreatePasteURL | GetPasteURL Key
 derivePrinterParsers ''Sitemap
 
 type Server = RouteT Sitemap (ServerPartT (ReaderT States (StateT Integer IO)))
