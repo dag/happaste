@@ -13,10 +13,7 @@ yuiNode :: HSP.Ident XML -> JExpr -> JExpr
 yuiNode x y = [jmacroE| `(y)`.Node.create(`(x)`) |]
 
 pjax :: JStat
-pjax =
-  [jmacro|
-    YUI().use "pjax" \y ->
-      new y.Pjax { container: "#content"
-                 , linkSelector: "a.pjax"
-                 }
-  |]
+pjax = [jmacro| YUI().use "pjax" \y ->
+                  new y.Pjax { container    : "#content"
+                             , linkSelector : "a.pjax"
+                             } |]
