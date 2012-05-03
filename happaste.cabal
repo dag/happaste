@@ -54,7 +54,7 @@ Executable happaste
     highlighter                  == 0.2.*,
     hslogger                     == 1.1.*,
     hsx                          == 0.9.*,
-    hsx-jmacro                   == 7.0.*,
+    hsx-jmacro                   == 7.0.0,
     ixset                        == 1.0.*,
     jmacro                       == 0.5.*,
     language-css                 == 0.0.*,
