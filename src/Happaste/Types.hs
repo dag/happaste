@@ -19,14 +19,12 @@ import Data.Map                       (Map)
 import Data.SafeCopy                  (base, deriveSafeCopy)
 import Data.Text                      (Text)
 import Data.Typeable                  (Typeable)
-import HSP.Identity                   (Ident, evalIdentity)
 import HSX.JMacro                     (IntegerSupply(nextInteger), nextInteger')
 import Happstack.Server               (ServerPartT)
-import Happstack.Server.HSP.HTML      (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT, XML, renderXML)
+import Happstack.Server.HSP.HTML      (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT)
 import Happstack.Server.JMacro        ()
 import Language.Css.Pretty            (prettyPrint)
 import Language.Css.Syntax            (StyleSheet)
-import Language.Javascript.JMacro     (ToJExpr(toJExpr))
 import Text.Boomerang.TH              (derivePrinterParsers)
 import Text.Digestive.Forms.Happstack (HappstackForm)
 import Web.Routes                     (RouteT)
@@ -141,9 +139,6 @@ instance EmbedAsChild Server StyleSheet where
         <% prettyPrint style %>
       </style>
     </%>
-
-instance ToJExpr (Ident XML) where
-  toJExpr = toJExpr . renderXML . evalIdentity
 
 type Template = XMLGenT Server (HSX.XML Server)
 
