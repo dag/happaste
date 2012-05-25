@@ -18,9 +18,10 @@ import Data.Text.Encoding               (encodeUtf8)
 import Happstack.Server                 (ServerPartT, Response, ToMessage, toResponse, ok, setHeaderM)
 import Happstack.Server.FileServe       (guessContentTypeM, mimeTypes)
 import Text.Blaze.Renderer.Text         (renderHtml)
-import Text.Digestive.Forms.Happstack   (eitherHappstackForm)
 import Text.Highlighter                 (lexerFromFilename, runLexer)
 import Text.Highlighter.Formatters.Html (format)
+import Text.Reform.Happstack            (happstackEitherForm)
+import Text.Reform.HSP.Text             (form)
 import Web.Routes                       (Site)
 import Web.Routes.Boomerang             (Router, boomerangSiteRouteT, lit, anyString, integer, (</>), (<>))
 import Web.Routes.Happstack             (seeOtherURL)
@@ -52,7 +53,7 @@ route (AssetURL f) = do
     maybe mzero (ok . toResponse) $ Map.lookup f assets
 
 route (CreatePasteURL) = do
-    r <- eitherHappstackForm pasteForm "paste"
+    r <- happstackEitherForm (form CreatePasteURL) "paste" pasteForm
     case r of
       Left f      -> createPastePage f
       Right paste -> update (CreatePaste paste) >>= seeOtherURL . GetPasteURL

@@ -2,22 +2,21 @@
 
 module Happaste.Forms where
 
-import Control.Applicative       ((<$>), (<*>))
-import Data.Text                 (pack)
+import qualified Data.Text as T
+
+import Control.Applicative       ((<$>), (<*>), (<*))
 import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), genElement)
-import Text.Digestive            ((++>), mapView)
-import Text.Digestive.HSP.Html4  (label, inputText, inputTextArea)
+import Text.Reform               ((++>), mapView)
+import Text.Reform.Happstack     ()
+import Text.Reform.HSP.Text      (label, inputText, textarea, buttonSubmit)
 
 import Happaste.Types
 
-pasteForm :: Form e
-pasteForm = mapView dl $ Paste
-    <$>   dt `mapView` label "File name:"
-      ++> dd `mapView` inputText Nothing
-    <*> ( pack <$>
-          dt `mapView` label "Paste:"
-      ++> dd `mapView` inputTextArea (Just 80) (Just 24) Nothing
-        )
+pasteForm :: Form Paste
+pasteForm = mapView dl $
+    Paste <$> dt `mapView` label "File name:" ++> dd `mapView` inputText T.empty
+          <*> dt `mapView` label "Paste:"     ++> dd `mapView` textarea 80 24 T.empty
+          <*  buttonSubmit T.empty "Create"
   where
     dl x = [<dl><% x %></dl>]
     dt x = [<dt><% x %></dt>]

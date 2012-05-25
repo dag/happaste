@@ -9,7 +9,6 @@ import Data.Lens                 ((^.))
 import Data.Text                 (Text, unpack)
 import Happstack.Server          (Response, ToMessage, getHeaderM, toResponse)
 import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), unXMLGenT, genEElement, cdata)
-import Text.Digestive.HSP.Html4  (form)
 import Web.Routes.XMLGenT        ()
 
 import Happaste.Css     (css)
@@ -74,14 +73,6 @@ unit size body =
       </div>
     </div>
 
-createPasteForm :: [Template] -> Template
-createPasteForm f =
-    form CreatePasteURL
-      <%>
-        <% f %>
-        <input type="submit" value="Create"/>
-      </%>
-
 recentPastesList :: Template
 recentPastesList = do
     ps <- query RecentPastes
@@ -95,7 +86,7 @@ createPastePage :: [Template] -> Server Response
 createPastePage f =
     appTemplate
       <%>
-        <% unit "17-24" $ createPasteForm f %>
+        <% unit "17-24" f %>
         <% unit "7-24" recentPastesList %>
       </%>
 

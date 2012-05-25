@@ -3,33 +3,33 @@
 module Happaste.Types where
 
 import qualified Data.Text        as T
-import qualified HSX.XMLGenerator as HSX
+import qualified Text.Reform      as Re
 
-import Control.Monad                  (MonadPlus, mzero, liftM)
-import Control.Monad.Reader           (MonadReader, asks, ReaderT)
-import Control.Monad.State            (StateT)
-import Control.Monad.Trans            (MonadIO)
-import Data.Acid                      (AcidState, QueryEvent, UpdateEvent, EventResult)
-import Data.Acid.Advanced             (MethodState, MethodResult, query', update')
-import Data.Default                   (Default(def))
-import Data.IxSet                     (IxSet, Indexable(empty), ixSet, ixFun)
-import Data.Lens                      (Lens, (^.), getL)
-import Data.Lens.Template             (makeLens)
-import Data.Map                       (Map)
-import Data.SafeCopy                  (base, deriveSafeCopy)
-import Data.Text                      (Text)
-import Data.Typeable                  (Typeable)
-import HSX.JMacro                     (IntegerSupply(nextInteger), nextInteger')
-import Happstack.Server               (ServerPartT)
-import Happstack.Server.HSP.HTML      (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), XMLGenT)
-import Happstack.Server.JMacro        ()
-import Language.Css.Pretty            (prettyPrint)
-import Language.Css.Syntax            (StyleSheet)
-import Text.Boomerang.TH              (derivePrinterParsers)
-import Text.Digestive.Forms.Happstack (HappstackForm)
-import Web.Routes                     (RouteT)
-import Web.Routes.Happstack           ()
-import Web.Routes.XMLGenT             ()
+import Control.Monad             (MonadPlus, mzero, liftM)
+import Control.Monad.Reader      (MonadReader, asks, ReaderT)
+import Control.Monad.State       (StateT)
+import Control.Monad.Trans       (MonadIO)
+import Data.Acid                 (AcidState, QueryEvent, UpdateEvent, EventResult)
+import Data.Acid.Advanced        (MethodState, MethodResult, query', update')
+import Data.Default              (Default(def))
+import Data.IxSet                (IxSet, Indexable(empty), ixSet, ixFun)
+import Data.Lens                 (Lens, (^.), getL)
+import Data.Lens.Template        (makeLens)
+import Data.Map                  (Map)
+import Data.SafeCopy             (base, deriveSafeCopy)
+import Data.Text                 (Text)
+import Data.Typeable             (Typeable)
+import Happstack.Server          (ServerPartT, Input)
+import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr(asAttr), genElement, asAttr, Attr((:=)), XMLGenT)
+import Happstack.Server.JMacro   ()
+import HSX.JMacro                (IntegerSupply(nextInteger), nextInteger')
+import HSX.XMLGenerator          (XMLType)
+import Language.Css.Pretty       (prettyPrint)
+import Language.Css.Syntax       (StyleSheet)
+import Text.Boomerang.TH         (derivePrinterParsers)
+import Web.Routes                (RouteT)
+import Web.Routes.Happstack      ()
+import Web.Routes.XMLGenT        ()
 
 summon :: MonadReader r m => Lens r t -> m t
 summon = asks . getL
@@ -140,6 +140,12 @@ instance EmbedAsChild Server StyleSheet where
       </style>
     </%>
 
-type Template = XMLGenT Server (HSX.XML Server)
+type Template = XMLGenT Server (XMLType Server)
 
-type Form e = HappstackForm Server e [Template] Paste
+data FormError = CommonFormError (Re.CommonFormError [Input])
+
+instance Re.FormError FormError where
+    type ErrorInputType FormError = [Input]
+    commonFormError = CommonFormError
+
+type Form = Re.Form Server [Input] FormError [Template] ()
