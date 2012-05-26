@@ -2,8 +2,8 @@
 
 module Happaste.Types where
 
-import qualified Data.Text        as T
-import qualified Text.Reform      as Re
+import qualified Data.Text   as T
+import qualified Text.Reform as Re
 
 import Control.Monad             (MonadPlus, mzero, liftM)
 import Control.Monad.Reader      (MonadReader, asks, ReaderT)
@@ -27,6 +27,7 @@ import HSX.XMLGenerator          (XMLType)
 import Language.Css.Pretty       (prettyPrint)
 import Language.Css.Syntax       (StyleSheet)
 import Text.Boomerang.TH         (derivePrinterParsers)
+import Text.Reform               (ErrorInputType)
 import Web.Routes                (RouteT)
 import Web.Routes.Happstack      ()
 import Web.Routes.XMLGenT        ()
