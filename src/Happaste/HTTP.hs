@@ -1,4 +1,4 @@
-module Happaste.Routes where
+module Happaste.HTTP where
 
 import Prelude hiding ((.))
 
@@ -27,7 +27,7 @@ import Web.Routes.Boomerang             (Router, boomerangSiteRouteT, lit, anySt
 import Web.Routes.Happstack             (seeOtherURL)
 
 import Happaste.Forms
-import Happaste.Html
+import Happaste.HTML
 import Happaste.State
 import Happaste.Types
 

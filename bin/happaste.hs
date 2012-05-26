@@ -13,7 +13,7 @@ import Happstack.Server     (mapServerPartT, simpleHTTP, nullConf, decodeBody, d
 import System.Log.Logger    (updateGlobalLogger, rootLoggerName, setLevel, Priority(DEBUG))
 import Web.Routes.Happstack (implSite)
 
-import Happaste.Routes
+import Happaste.HTTP
 import Happaste.Types
 
 server :: AcidState PasteState -> AcidState HighlighterState -> IO ()

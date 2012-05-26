@@ -1,4 +1,4 @@
-module Happaste.Css where
+module Happaste.CSS where
 
 import Prelude (($), (++))
 

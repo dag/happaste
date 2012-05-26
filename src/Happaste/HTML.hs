@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -F -pgmF trhsx #-}
 
-module Happaste.Html where
+module Happaste.HTML where
 
 import Prelude hiding (head)
 
@@ -11,8 +11,8 @@ import Happstack.Server          (Response, ToMessage, getHeaderM, toResponse)
 import Happstack.Server.HSP.HTML (EmbedAsChild(asChild), EmbedAsAttr, genElement, asAttr, Attr((:=)), unXMLGenT, genEElement, cdata)
 import Web.Routes.XMLGenT        ()
 
-import Happaste.Css     (css)
-import Happaste.Scripts (pjax)
+import Happaste.CSS   (css)
+import Happaste.JS    (pjax)
 import Happaste.State
 import Happaste.Types
 

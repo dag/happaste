@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -F -pgmF trhsx #-}
 
-module Happaste.Scripts where
+module Happaste.JS where
 
 import Language.Javascript.JMacro
 
