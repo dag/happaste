@@ -46,6 +46,7 @@ Executable happaste
     happstack-hsp        == 7.1.*,
     happstack-jmacro     == 7.0.*,
     happstack-server     == 7.0.1,
+    happstack-yui        == 7351.3.*,
     haskell-src-exts     == 1.13.* && >= 1.13.1,
     haskell-src-meta     == 0.5.* && >= 0.5.1.2,
     highlighter          == 0.2.*,
